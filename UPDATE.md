@@ -7,8 +7,8 @@ HTTP request.
 
 ## Implemented version contract
 
-`config/version.php` is the source authority for application version `0.5.0` and
-target schema version `3`. Persistent `app_installations.source_version` and
+`config/version.php` is the source authority for application version `0.6.0` and
+target schema version `4`. Persistent `app_installations.source_version` and
 `schema_version` record what successfully completed. Migration files are ordered by
 strict timestamp identifiers, each declare one unique integer schema version, and
 successful IDs are stored in `migrations`. Source older than the installed source
@@ -89,6 +89,10 @@ Phase 05 schema version 3 is an idempotent forward migration adding only
 authentication account state, temporary throttling, and reset-token storage. It
 preserves all existing users and updates source/schema markers through the same
 runner.
+
+Phase 06 schema version 4 adds RBAC definitions/assignments and audit storage, then
+idempotently grants the existing administrator role the initial permission catalog.
+It does not implement or modify website, keyword, ranking, or integration data.
 
 ## Shared-host limitations
 

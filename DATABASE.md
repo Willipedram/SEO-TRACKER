@@ -41,6 +41,12 @@ Phase 05 schema version 3 adds nullable `users.disabled_at`, bounded
 single-use timestamp. Raw reset secrets, passwords, and session IDs are never stored
 in these tables.
 
+Phase 06 schema version 4 adds `permissions`, `role_permissions`, and append-only-
+intent `audit_logs`; the pre-existing `roles` and `user_roles` tables already model
+multiple roles per user. Unique keys and composite primary keys prevent duplicate
+definitions/assignments, while foreign keys clean up role/permission joins. The
+administrator role is idempotently assigned every initial permission.
+
 ### Identity and access
 
 - `users`: login/profile state, verified/disabled timestamps, password hash where

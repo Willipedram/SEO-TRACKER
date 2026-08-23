@@ -11,8 +11,8 @@ authorization decision. `POST /logout` is CSRF-protected, clears server-side ses
 state, expires the cookie, destroys the session, and redirects to login.
 
 Authentication proves identity only. Roles are not loaded into the session and the
-authentication layer exposes no permission API. Phase 06 must implement policies
-and RBAC independently while consuming the authenticated user identity.
+authentication layer exposes no permission API. Phase 06 RBAC independently
+consumes the authenticated user identity and resolves permissions from the database.
 
 ## Passwords and account state
 
@@ -57,6 +57,7 @@ authenticated sessions.
 
 - Remember-me tokens are not implemented: the current schema has no device-token
   rotation/revocation model, and extending session lifetime would be unsafe.
-- Authentication does not implement roles, permissions, gates, or RBAC.
+- Authentication itself does not implement roles, permissions, gates, or RBAC; the
+  separate Phase 06 authorization layer consumes its identity.
 - MFA, email verification workflows, session inventories, and global logout remain
   later security capabilities.

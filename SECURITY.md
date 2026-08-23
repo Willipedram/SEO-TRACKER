@@ -88,9 +88,8 @@ methods without a constant-time validated CSRF token. It provides a single HTML
 escaping primitive for later presentation code. PDO operations are parameterized,
 configuration rejects malformed DSN components, structured log context redacts
 secret keys and common embedded credential forms, and production exception
-responses contain no technical detail. Authentication, authorization, proxy trust,
-rate limiting, CSP nonces, and route-specific CSRF exemptions are intentionally not
-implemented before their owning phases.
+responses contain no technical detail. Proxy trust, CSP nonces, and route-specific CSRF exemptions remain deferred to
+their owning phases; authentication and authorization controls are described below.
 
 The Phase 03 web installer is available only while the configured database lacks
 the verified application marker. All installer writes use the global CSRF guard;
@@ -119,3 +118,12 @@ logs contain user IDs or HMAC-derived correlation keys, never passwords, raw ema
 network values, reset secrets, or session IDs. Password reset tokens use independent
 high-entropy selector/secret values, store only the secret digest, expire, and are
 atomically single-use. See `AUTHENTICATION.md` for boundaries and exclusions.
+
+Phase 06 authorization resolves effective permissions from persistent role joins on
+every protected operation and excludes disabled users. Management controllers and
+their underlying services both enforce capability checks; submitted IDs are bounded,
+validated, and resolved server-side. User creation cannot mass-assign roles, and
+only `roles.manage` can alter assignments. Self/last-administrator and mandatory
+administrator-management invariants prevent common lockout/escalation paths. Every
+mutation uses CSRF and records a transactional, allow-listed audit event. See
+`RBAC.md`.
