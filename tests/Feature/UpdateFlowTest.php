@@ -36,7 +36,9 @@ final class UpdateFlowTest extends TestCase
         $this->assertSame(200, $completed->status);
         $this->assertSame('Existing Admin', $pdo->query('SELECT name FROM users')->fetchColumn());
         $this->assertSame(2, (int) $pdo->query('SELECT schema_version FROM app_installations')->fetchColumn());
-        $this->assertSame(200, $controller->home()->status);
+        $ready = $controller->home();
+        $this->assertSame(302, $ready->status);
+        $this->assertSame('/login', $ready->headers['Location']);
         unlink($path);
     }
 }

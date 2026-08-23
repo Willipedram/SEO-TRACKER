@@ -25,7 +25,7 @@ final class EnvironmentWriter
             'LOG_LEVEL' => 'info', 'LOG_PATH' => 'storage/logs/application.log',
             'DB_CONNECTION' => 'mysql', 'DB_HOST' => $database->host, 'DB_PORT' => (string) $database->port,
             'DB_DATABASE' => $database->database, 'DB_USERNAME' => $database->username, 'DB_PASSWORD' => $database->password,
-            'DB_CHARSET' => 'utf8mb4', 'SESSION_SECURE' => str_starts_with($applicationUrl, 'https://') ? 'true' : 'false', 'SESSION_SAME_SITE' => 'Lax',
+            'DB_CHARSET' => 'utf8mb4', 'SESSION_SECURE' => str_starts_with($applicationUrl, 'https://') ? 'true' : 'false', 'SESSION_SAME_SITE' => 'Lax', 'SESSION_LIFETIME' => '43200',
         ];
         $content = '';
         foreach ($values as $key => $value) {

@@ -8,6 +8,7 @@ use PDO;
 use Throwable;
 use App\Core\Database\Database;
 use App\Core\Update\Migration;
+use App\Core\Auth\PasswordHasher;
 
 final class SchemaInstaller
 {
@@ -32,7 +33,7 @@ final class SchemaInstaller
             $now = gmdate('Y-m-d H:i:s');
             $this->insert($pdo, 'INSERT INTO roles (role_key, name, created_at, updated_at) VALUES (:key, :name, :created, :updated)', ['key' => 'administrator', 'name' => 'Administrator', 'created' => $now, 'updated' => $now]);
             $roleId = (int) $pdo->lastInsertId();
-            $this->insert($pdo, 'INSERT INTO users (name, email, password_hash, email_verified_at, created_at, updated_at) VALUES (:name, :email, :password, :verified, :created, :updated)', ['name' => $name, 'email' => strtolower($email), 'password' => password_hash($password, PASSWORD_DEFAULT), 'verified' => $now, 'created' => $now, 'updated' => $now]);
+            $this->insert($pdo, 'INSERT INTO users (name, email, password_hash, email_verified_at, created_at, updated_at) VALUES (:name, :email, :password, :verified, :created, :updated)', ['name' => $name, 'email' => strtolower($email), 'password' => (new PasswordHasher())->hash($password), 'verified' => $now, 'created' => $now, 'updated' => $now]);
             $userId = (int) $pdo->lastInsertId();
             $this->insert($pdo, 'INSERT INTO user_roles (user_id, role_id, assigned_at) VALUES (:user, :role, :assigned)', ['user' => $userId, 'role' => $roleId, 'assigned' => $now]);
             $this->insert($pdo, 'INSERT INTO settings (setting_key, setting_value, value_type, created_at, updated_at) VALUES (:key, :value, :type, :created, :updated)', ['key' => 'application.name', 'value' => $siteName, 'type' => 'string', 'created' => $now, 'updated' => $now]);

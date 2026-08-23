@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/bootstrap/autoload.php';
 require __DIR__ . '/TestCase.php';
+foreach (glob(__DIR__ . '/Support/*.php') ?: [] as $support) {
+    require_once $support;
+}
 
 $files = array_merge(glob(__DIR__ . '/Unit/*Test.php') ?: [], glob(__DIR__ . '/Feature/*Test.php') ?: [], glob(__DIR__ . '/Architecture/*Test.php') ?: []);
 $failures = 0;

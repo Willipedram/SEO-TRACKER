@@ -35,6 +35,12 @@ and failure time independently of the successful migration ledger. A successful
 retry deletes the corresponding failure state. Neither the tracking migration nor
 the runner deletes domain or user data.
 
+Phase 05 schema version 3 adds nullable `users.disabled_at`, bounded
+`auth_login_attempts` keyed by HMAC identifiers rather than plaintext email/IP, and
+`password_reset_tokens` containing a public selector, secret digest, expiry, and
+single-use timestamp. Raw reset secrets, passwords, and session IDs are never stored
+in these tables.
+
 ### Identity and access
 
 - `users`: login/profile state, verified/disabled timestamps, password hash where

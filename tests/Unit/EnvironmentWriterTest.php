@@ -21,7 +21,7 @@ final class EnvironmentWriterTest extends TestCase
         putenv('DB_PASSWORD');
         Environment::load($path);
         $this->assertSame($password, $_ENV['DB_PASSWORD']);
-        foreach (['APP_ENV', 'APP_DEBUG', 'APP_URL', 'APP_KEY', 'APP_TIMEZONE', 'APP_TRUSTED_HOSTS', 'LOG_LEVEL', 'LOG_PATH', 'DB_CONNECTION', 'DB_HOST', 'DB_PORT', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD', 'DB_CHARSET', 'SESSION_SECURE', 'SESSION_SAME_SITE'] as $name) {
+        foreach (['APP_ENV', 'APP_DEBUG', 'APP_URL', 'APP_KEY', 'APP_TIMEZONE', 'APP_TRUSTED_HOSTS', 'LOG_LEVEL', 'LOG_PATH', 'DB_CONNECTION', 'DB_HOST', 'DB_PORT', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD', 'DB_CHARSET', 'SESSION_SECURE', 'SESSION_SAME_SITE', 'SESSION_LIFETIME'] as $name) {
             unset($_ENV[$name]);
             putenv($name);
         }

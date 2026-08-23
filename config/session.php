@@ -7,5 +7,5 @@ return [
     'path' => dirname(__DIR__) . '/storage/framework/sessions',
     'secure' => env_bool('SESSION_SECURE', !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
     'same_site' => env('SESSION_SAME_SITE', 'Lax'),
-    'lifetime' => 7200,
+    'lifetime' => env_int('SESSION_LIFETIME', 43200),
 ];

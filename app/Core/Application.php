@@ -77,14 +77,19 @@ final class Application
         session_save_path($sessionPath);
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
-        session_set_cookie_params([
-            'lifetime' => (int) $this->config->get('session.lifetime', 7200),
-            'path' => '/', 'secure' => (bool) $this->config->get('session.secure', true),
-            'httponly' => true, 'samesite' => (string) $this->config->get('session.same_site', 'Lax'),
-        ]);
+        session_set_cookie_params($this->sessionCookieParameters());
         if (!session_start()) {
             throw new RuntimeException('Unable to start session.');
         }
+    }
+
+    public function sessionCookieParameters(): array
+    {
+        return [
+            'lifetime' => (int) $this->config->get('session.lifetime', 43200),
+            'path' => '/', 'secure' => (bool) $this->config->get('session.secure', true),
+            'httponly' => true, 'samesite' => (string) $this->config->get('session.same_site', 'Lax'),
+        ];
     }
 
     public function router(): Router { return $this->router; }

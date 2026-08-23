@@ -110,3 +110,12 @@ temporarily throttled per updater session. CLI execution requires explicit
 directory and rejects malformed names/contracts, while update requests cannot
 supply code, paths, SQL, versions, or migration identifiers. Technical failures are
 redacted in both the protected log and database failure record.
+
+Phase 05 authentication uses adaptive Argon2id/PHP-default password hashes with
+verification-time rehashing, generic login failures, disabled-account checks,
+account-plus-network temporary throttling, CSRF on login/logout, session ID rotation
+on login, idle/absolute expiry, and complete session destruction on logout. Auth
+logs contain user IDs or HMAC-derived correlation keys, never passwords, raw email/
+network values, reset secrets, or session IDs. Password reset tokens use independent
+high-entropy selector/secret values, store only the secret digest, expire, and are
+atomically single-use. See `AUTHENTICATION.md` for boundaries and exclusions.

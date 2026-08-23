@@ -22,7 +22,7 @@ final class UpdaterController
         try {
             return $this->runner()->plan()->required()
                 ? Response::redirect('/update', 302)
-                : Response::json(['application' => 'SEO Tracker', 'status' => 'ready', 'version' => $this->config->get('version.application')]);
+                : Response::redirect('/login', 302);
         } catch (UpdateException) {
             return Response::redirect('/update', 302);
         } catch (Throwable) {

@@ -14,6 +14,7 @@ final class Request
         public readonly array $headers = [],
         public readonly array $cookies = [],
         public readonly string $scheme = 'http',
+        public readonly string $remoteAddress = '0.0.0.0',
     ) {}
 
     public static function capture(): self
@@ -26,7 +27,7 @@ final class Request
         }
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        return new self(strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'), '/' . ltrim($path, '/'), $_GET, $_POST, array_change_key_case($headers, CASE_LOWER), $_COOKIE, $scheme);
+        return new self(strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'), '/' . ltrim($path, '/'), $_GET, $_POST, array_change_key_case($headers, CASE_LOWER), $_COOKIE, $scheme, (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'));
     }
 
     public function header(string $name): ?string

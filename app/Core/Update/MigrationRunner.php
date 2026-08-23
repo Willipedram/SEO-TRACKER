@@ -43,7 +43,7 @@ final class MigrationRunner
                 throw new UpdateException('Migration ledger is inconsistent at ' . $migration->id . '; restore or repair it before updating.');
             }
         }
-        $pending = array_values(array_filter($all, static fn (Migration $migration): bool => $migration->schemaVersion > $installedSchema && !in_array($migration->id, $applied, true)));
+        $pending = array_values(array_filter($all, fn (Migration $migration): bool => $migration->schemaVersion > $installedSchema && $migration->schemaVersion <= $this->targetSchemaVersion && !in_array($migration->id, $applied, true)));
         return new UpdatePlan($installedSource, $this->sourceVersion, $installedSchema, $this->targetSchemaVersion, $pending);
     }
 
