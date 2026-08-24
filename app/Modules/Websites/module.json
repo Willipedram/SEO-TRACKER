@@ -1,0 +1,6 @@
+{
+  "name": "Websites",
+  "version": "1.0.0",
+  "provider": "App\\Modules\\Websites\\Infrastructure\\WebsitesModule",
+  "dependencies": ["Foundation"]
+}
