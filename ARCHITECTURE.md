@@ -145,6 +145,14 @@ scheduler is triggered by one cron entry every minute. Long-running queue worker
 may be replaced by bounded cron-driven queue processing on hosts without a
 process supervisor, with reduced throughput documented.
 
+Phase 09 selects a database-backed, lease-based queue as the initial Rank Tracking
+control plane so Apache/DirectAdmin does not require a resident worker. A minute cron
+invokes a bounded CLI worker; enrolled agents may outbound-poll and atomically lease
+eligible work. Attempts, executor provenance, modeled/native device semantics, and
+network context are immutable. Provider/server execution never claims the user's IP,
+and fallback never silently changes execution source. See `RANK_TRACKING.md` and ADR
+0012; no engine is implemented in Phase 09.
+
 ## Logging, errors, and observability
 
 Use the foundation JSON-lines logger with UTC time, environment,

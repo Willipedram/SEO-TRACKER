@@ -88,19 +88,28 @@ are never stored in plaintext.
 
 ### Rank tracking
 
-- `rank_checks`: one scheduled/executed collection attempt with provider, target,
-  status, requested/start/finish timestamps, retry/idempotency key, and sanitized
-  error classification. Index scheduling/status fields.
-- `rank_results`: immutable observation per check, keyword, device, location,
-  search engine, observed timestamp, rank (nullable when not found), result URL,
-  SERP feature metadata, and provider provenance. Enforce uniqueness for the
-  check/keyword/target identity to make retries safe.
+- `rank_check_requests`: immutable actor/website/keyword and search-configuration
+  snapshot, source policy, lifecycle/deadline timestamps, correlation ID, and scoped
+  idempotency key. Raw IP/user-agent observations do not belong on the request.
+- `rank_execution_attempts`: one leased execution with source, adapter/version,
+  agent/vendor reference, lease/version fields, requested versus actual device
+  semantics, privacy-minimized network context, timestamps, attestation/digest,
+  status, and normalized error. Retries append attempts rather than overwriting.
+- `rank_results`: immutable accepted observation tied to request and attempt, with
+  engine/market/device/source provenance, observed timestamp, nullable rank, result
+  URL, checked depth, result classification, adapter/version, and evidence metadata.
+  Challenges and failures are never encoded as `not_found`.
 
 `rank_results` is the canonical history; a duplicate `rank_history` table is not
 planned. Dashboard summaries may later use rebuildable aggregate/projection
 tables. Partitioning/archive policy is deferred until measured volume justifies
 it. Raw provider responses are not retained by default; if required for diagnosis,
 store them encrypted or in protected object storage with short retention.
+
+Phase 09 creates no rank tables or migration. Names above are logical contracts for
+Phase 10 review. Queue indexes must support eligible-state/time/priority claims,
+lease expiry, request attempts, keyword chronology, and unique idempotent result
+acceptance. See `RANK_TRACKING.md` before finalizing DDL.
 
 ### Optional Search Console
 

@@ -144,3 +144,20 @@ the global CSRF guard, explicit field mapping, bounded validation, parameterized
 escaped HTML, fixed local redirects, transactions, and metadata-minimized audits.
 Optional target URLs reject non-HTTP(S) schemes, credentials, and fragments and are
 never fetched. See `KEYWORDS.md`.
+
+Phase 09 treats rank executors and provider responses as untrusted. Browser page
+JavaScript is not a scraper, direct server requests never claim user-IP semantics,
+and an agent may receive only short-lived job-scoped capabilities for allowlisted
+adapters. Never collect Google passwords, provider cookies, general browsing history,
+or expose a generic URL-fetch/proxy interface. Enrollment credentials are revocable;
+jobs/results require replay protection, bounded leases, validation, provenance, and
+kill switches. See ADR 0012 and `RANK_TRACKING.md`.
+
+IP addresses are personal data in many contexts and are minimized by default. Rank
+attempts store network-context classification and a rotating keyed HMAC of the
+control-plane-observed agent connection only when needed for abuse correlation. Raw
+IP, unbounded user-agent strings, response pages, vendor secrets, and executor tokens
+must not enter ordinary logs, queue payloads, URLs, or exports. Exact IP retention is
+off by default and requires a documented purpose, legal basis/notice, encryption,
+strict access, short retention, and audit. Agent execution is described as its
+observed network path, not proof of residential address or physical location.
