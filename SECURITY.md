@@ -127,3 +127,12 @@ only `roles.manage` can alter assignments. Self/last-administrator and mandatory
 administrator-management invariants prevent common lockout/escalation paths. Every
 mutation uses CSRF and records a transactional, allow-listed audit event. See
 `RBAC.md`.
+
+Phase 07 website operations require both their data-driven `websites.*` permission
+and ownership of the selected row. Random public IDs reduce enumeration and every
+lookup still scopes by authenticated owner to prevent IDOR. Origins are normalized
+without network access and reject credentials, ports, paths, queries, fragments,
+invalid/non-ASCII hosts, and unsupported protocols. Mutations use CSRF-protected
+POST requests, explicit fields, parameterized queries, escaped output, transactions,
+and allow-listed audit metadata. Archive replaces destructive deletion. See
+`WEBSITES.md`.

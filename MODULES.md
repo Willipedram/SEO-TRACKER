@@ -14,7 +14,8 @@ only when stable. Framework conveniences remain in normal Laravel locations.
 
 ## Planned module map
 
-This is a dependency plan, not implemented functionality:
+This map includes implemented and planned module boundaries; each phase documents
+which providers are enabled:
 
 | Module | Responsibility | Allowed direct dependencies |
 |---|---|---|
@@ -70,7 +71,13 @@ views are never referenced directly by Core.
 
 ## Frontend decision
 
-No frontend is implemented. A later phase may introduce escaped server-rendered
-templates with progressively enhanced JavaScript and a pinned asset pipeline.
-Node, if adopted, is build-time only. A SPA remains unjustified by current
-requirements; charting should be adapter-wrapped and loaded only where needed.
+Installer, account, administration, and website management pages use escaped
+server-rendered HTML with no JavaScript dependency. Later phases may introduce
+progressive enhancement and a pinned asset pipeline. Node, if adopted, is build-time
+only. A SPA remains unjustified; charting should be adapter-wrapped and loaded only
+where needed.
+
+Phase 07 enables `Websites`. Its normalization value object, lifecycle service,
+presentation controller, and factory live under `app/Modules/Websites`; centrally
+discovered release migrations remain under `database/migrations`. The module does
+not reference future Keywords, Rank Tracking, or Search Console implementations.

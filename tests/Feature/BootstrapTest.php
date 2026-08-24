@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 final class BootstrapTest extends TestCase
 {
-    public function testApplicationBootsWithoutDatabaseOrBusinessModules(): void
+    public function testApplicationBootsWithoutDatabaseOrBusinessData(): void
     {
         $application = require dirname(__DIR__, 2) . '/bootstrap/app.php';
         $response = $application->handle(new Request('GET', '/', headers: ['host' => 'localhost']));

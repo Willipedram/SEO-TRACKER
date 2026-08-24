@@ -8,5 +8,5 @@ use App\Core\Http\Router;
 
 interface Module
 {
-    public function register(Router $router): void;
+    public function register(Router $router, ?ModuleContext $context = null): void;
 }

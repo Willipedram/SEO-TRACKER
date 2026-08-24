@@ -7,17 +7,18 @@ namespace Tests\Unit;
 use App\Core\Http\Router;
 use App\Core\Modules\Module;
 use App\Core\Modules\ModuleLoader;
+use App\Core\Modules\ModuleContext;
 use RuntimeException;
 use Tests\TestCase;
 
 final class DependencyModule implements Module
 {
-    public function register(Router $router): void {}
+    public function register(Router $router, ?ModuleContext $context = null): void {}
 }
 
 final class DependantModule implements Module
 {
-    public function register(Router $router): void {}
+    public function register(Router $router, ?ModuleContext $context = null): void {}
 }
 
 final class ModuleLoaderTest extends TestCase

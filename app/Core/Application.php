@@ -12,6 +12,7 @@ use App\Core\Http\Response;
 use App\Core\Http\Router;
 use App\Core\Logging\Logger;
 use App\Core\Modules\ModuleLoader;
+use App\Core\Modules\ModuleContext;
 use App\Core\Security\SecurityHeaders;
 use App\Core\Security\Csrf;
 use RuntimeException;
@@ -39,7 +40,7 @@ final class Application
         $logger = new Logger($logPath, strtolower((string) $config->get('logging.level', 'info')));
         $router = new Router();
         $modules = new ModuleLoader((array) $config->get('modules.paths', []), (array) $config->get('modules.enabled', []));
-        $modules->load($router);
+        $modules->load($router, new ModuleContext($basePath, $config));
         require $basePath . '/routes/web.php';
         return new self($basePath, $config, $router, $logger, $modules, new ErrorHandler($logger, (bool) $config->get('app.debug', false)), new ConnectionFactory($config));
     }

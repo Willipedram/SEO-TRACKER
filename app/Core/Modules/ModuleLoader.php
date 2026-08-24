@@ -13,7 +13,7 @@ final class ModuleLoader
 
     public function __construct(private readonly array $paths, private readonly array $enabled) {}
 
-    public function load(Router $router): void
+    public function load(Router $router, ?ModuleContext $context = null): void
     {
         $manifests = [];
         foreach ($this->enabled as $name) {
@@ -66,7 +66,7 @@ final class ModuleLoader
             if (!$module instanceof Module) {
                 throw new RuntimeException(sprintf('Provider for %s must implement Module.', $name));
             }
-            $module->register($router);
+            $module->register($router, $context);
             $this->loaded[] = ['name' => $name, 'version' => $manifest['version']];
         }
     }

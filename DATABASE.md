@@ -47,6 +47,11 @@ multiple roles per user. Unique keys and composite primary keys prevent duplicat
 definitions/assignments, while foreign keys clean up role/permission joins. The
 administrator role is idempotently assigned every initial permission.
 
+Phase 07 schema version 5 adds `websites`. Each row has a random opaque public ID,
+immutable owner, normalized domain, canonical HTTP(S) origin, protocol, description,
+IANA timezone, lifecycle status, and archive timestamp. `(owner_user_id,
+normalized_domain)` and public IDs are unique; owner/status is indexed.
+
 ### Identity and access
 
 - `users`: login/profile state, verified/disabled timestamps, password hash where
@@ -62,9 +67,9 @@ are never stored in plaintext.
 
 ### Websites and keywords
 
-- `websites`: owner/account reference, canonical origin, normalized host, timezone,
-  active state, and opaque public ID. Uniqueness scope must follow the final
-  multi-user ownership model, decided before its migration.
+- `websites`: immutable owner reference, canonical origin, normalized host, timezone,
+  lifecycle state, and opaque public ID. Phase 07 selects owner-scoped domain
+  uniqueness and owner-only access; see `WEBSITES.md`.
 - `website_user` only if shared website membership is required; otherwise the
   explicit owner reference is sufficient. Do not create speculative join tables.
 - `keywords`: website reference, normalized query and original display query,
