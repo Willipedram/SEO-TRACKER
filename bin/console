@@ -1,0 +1,62 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$application = require dirname(__DIR__) . '/bootstrap/app.php';
+$command = $argv[1] ?? 'help';
+$migrationRunner = static function () use ($application): App\Core\Update\MigrationRunner {
+    $logPath = (string) $application->config()->get('logging.path', 'storage/logs/application.log');
+    if (!str_starts_with($logPath, '/')) {
+        $logPath = $application->basePath() . '/' . $logPath;
+    }
+    return new App\Core\Update\MigrationRunner(
+        $application->database()->connect(),
+        new App\Core\Update\MigrationDiscovery($application->basePath() . '/database/migrations'),
+        (string) $application->config()->get('version.application'),
+        (int) $application->config()->get('version.schema'),
+        new App\Core\Logging\Logger($logPath, (string) $application->config()->get('logging.level', 'info')),
+    );
+};
+
+switch ($command) {
+    case 'app:check':
+        $required = ['json', 'pdo'];
+        $missing = array_values(array_filter($required, static fn (string $extension): bool => !extension_loaded($extension)));
+        $writable = is_writable($application->basePath() . '/storage/logs');
+        if ($missing !== [] || !$writable) {
+            fwrite(STDERR, json_encode(['status' => 'failed', 'missing_extensions' => $missing, 'logs_writable' => $writable], JSON_THROW_ON_ERROR) . PHP_EOL);
+            exit(1);
+        }
+        echo json_encode(['status' => 'ok', 'php' => PHP_VERSION, 'modules' => $application->modules()->loaded()], JSON_THROW_ON_ERROR) . PHP_EOL;
+        break;
+    case 'route:list':
+        foreach ($application->router()->all() as [$method, $path]) {
+            printf("%-7s %s\n", $method, $path);
+        }
+        break;
+    case 'module:list':
+        echo json_encode($application->modules()->loaded(), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR) . PHP_EOL;
+        break;
+    case 'rank:work':
+        $limit = 10;
+        foreach ($argv as $argument) if (str_starts_with($argument, '--limit=')) $limit = (int) substr($argument, 8);
+        $processed = (new App\Modules\RankTracking\Infrastructure\RankTrackingFactory($application->basePath(), $application->config()))->worker()->work($limit, workerId: 'cli:' . getmypid());
+        echo json_encode(['status' => 'ok', 'processed' => $processed], JSON_THROW_ON_ERROR) . PHP_EOL;
+        break;
+    case 'update:status':
+        $plan = $migrationRunner()->plan();
+        echo json_encode(['installed_application' => $plan->installedApplicationVersion, 'source_application' => $plan->sourceApplicationVersion, 'installed_schema' => $plan->installedSchemaVersion, 'target_schema' => $plan->targetSchemaVersion, 'pending' => array_map(static fn ($migration): string => $migration->id, $plan->pending)], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR) . PHP_EOL;
+        break;
+    case 'update:run':
+        if (!in_array('--force', $argv, true)) {
+            fwrite(STDERR, "Refusing database update without --force. Verify backups first.\n");
+            exit(2);
+        }
+        $plan = $migrationRunner()->run();
+        echo json_encode(['status' => 'complete', 'application' => $plan->installedApplicationVersion, 'schema' => $plan->installedSchemaVersion], JSON_THROW_ON_ERROR) . PHP_EOL;
+        break;
+    default:
+        echo "SEO Tracker utility\n\nCommands:\n  app:check\n  route:list\n  module:list\n  rank:work --limit=10\n  update:status\n  update:run --force\n";
+        exit($command === 'help' ? 0 : 1);
+}
