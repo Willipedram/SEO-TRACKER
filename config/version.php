@@ -3,6 +3,6 @@
 declare(strict_types=1);
 
 return [
-    'application' => '0.8.0',
-    'schema' => 6,
+    'application' => '0.9.0',
+    'schema' => 7,
 ];

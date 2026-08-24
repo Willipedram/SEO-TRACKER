@@ -1,11 +1,15 @@
 # Rank Tracking Architecture
 
-## Phase boundary
+## Implemented Phase 10 boundary
 
-Phase 09 is design only. The repository contains no rank-check routes, scraper,
-provider client, job runner, client agent, proxy integration, rank schema, or sample
-SERP data. Phase 10 must implement only adapters approved under ADR 0012 and must not
-claim user-IP, desktop/mobile, or provider semantics that an attempt did not deliver.
+Phase 10 implements the control plane, database queue/leases, adapter contract,
+request/status/history UI, immutable results, safe retry, and bounded CLI worker. It
+does **not** implement a scraper, local agent, browser extension, proxy, or live
+provider adapter. Production adapter registration remains empty and `RANK_ADAPTER`
+defaults to blank because no adapter has passed ADR 0012's approval gate. Submitting
+a check without an approved registered adapter fails explicitly; it never fabricates
+a ranking. Automated success/not-found tests use an in-process test adapter and are
+not evidence of external provider behavior.
 
 ## Execution strategy and client/server model
 
@@ -169,6 +173,13 @@ bursts and coalesce duplicate checks with idempotency keys. Agent limits protect
 user's network; provider limits obey contract quotas and cost budgets. A circuit
 breaker pauses unhealthy adapters. Rate-limit responses are errors, never rankings.
 
+Phase 10 implements a bounded per-user submission window, bounded worker batch, lease
+duration, and capped attempts. Provider-account/engine quotas and circuit breaking
+must be supplied by a future approved adapter because no vendor account exists; an
+adapter cannot be registered until those controls are reviewed. The current request
+count limiter is a shared-database control, not a promise of exact distributed quota
+accounting under untested MySQL concurrency.
+
 ## Privacy, retention, and transparency
 
 Before execution, disclose source and truthful IP/device semantics. Let users choose
@@ -197,10 +208,21 @@ Terms are external and can change. Re-review dates and policy URLs are operation
 configuration, not assumptions embedded in code. If permission is unclear, the
 adapter remains disabled.
 
-## Phase 10 entry criteria
+## Live adapter activation criteria
 
-Phase 10 may implement the queue/request state machine and one reviewed structured
-adapter behind a fake-free test double. It must include concurrency/idempotency tests,
-privacy retention, authorization, kill switch, quota controls, provenance, and safe
-failure behavior. A local agent, extension, scraper, proxy, or vendor integration is
-not implied by this architecture and requires its own scoped phase/review.
+The engine is deliberately adapter-incomplete until one structured provider passes
+the terms, security, privacy, cost, and accuracy gate above. An implementation must
+register a `RankAdapter`, report a semantic version and truthful execution source,
+map desktop/mobile into materially compatible execution-device modes, convert only
+approved transient failures into retryable codes, and pass conformance plus live
+integration tests. A local agent, extension, scraper, proxy, or vendor integration
+requires its own scoped review.
+
+## Implemented operational commands and status
+
+`php bin/console rank:work --limit=10` claims a bounded number of eligible database
+jobs. Configure DirectAdmin cron once per minute after an adapter is approved. Public
+job states are `pending`, `running`, `completed`, and `failed`; `retry_wait` is a
+pending retry. Results append to history and have a unique attempt identity. Worker
+crashes leave leases that a later invocation expires and safely retries within the
+configured maximum.

@@ -38,6 +38,12 @@ switch ($command) {
     case 'module:list':
         echo json_encode($application->modules()->loaded(), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR) . PHP_EOL;
         break;
+    case 'rank:work':
+        $limit = 10;
+        foreach ($argv as $argument) if (str_starts_with($argument, '--limit=')) $limit = (int) substr($argument, 8);
+        $processed = (new App\Modules\RankTracking\Infrastructure\RankTrackingFactory($application->basePath(), $application->config()))->worker()->work($limit, workerId: 'cli:' . getmypid());
+        echo json_encode(['status' => 'ok', 'processed' => $processed], JSON_THROW_ON_ERROR) . PHP_EOL;
+        break;
     case 'update:status':
         $plan = $migrationRunner()->plan();
         echo json_encode(['installed_application' => $plan->installedApplicationVersion, 'source_application' => $plan->sourceApplicationVersion, 'installed_schema' => $plan->installedSchemaVersion, 'target_schema' => $plan->targetSchemaVersion, 'pending' => array_map(static fn ($migration): string => $migration->id, $plan->pending)], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR) . PHP_EOL;
@@ -51,6 +57,6 @@ switch ($command) {
         echo json_encode(['status' => 'complete', 'application' => $plan->installedApplicationVersion, 'schema' => $plan->installedSchemaVersion], JSON_THROW_ON_ERROR) . PHP_EOL;
         break;
     default:
-        echo "SEO Tracker utility\n\nCommands:\n  app:check\n  route:list\n  module:list\n  update:status\n  update:run --force\n";
+        echo "SEO Tracker utility\n\nCommands:\n  app:check\n  route:list\n  module:list\n  rank:work --limit=10\n  update:status\n  update:run --force\n";
         exit($command === 'help' ? 0 : 1);
 }

@@ -115,6 +115,7 @@ final class KeywordController
                 $active = (int) $keyword['active'] === 1;
                 $form .= '<form method="post" action="/keywords/status">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="id" value="' . Html::escape((string) $keyword['public_id']) . '"><input type="hidden" name="active" value="' . ($active ? '0' : '1') . '"><button>' . ($active ? 'Deactivate' : 'Activate') . '</button></form>';
                 $form .= '<form method="post" action="/keywords/delete">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="id" value="' . Html::escape((string) $keyword['public_id']) . '"><button class="danger">Delete keyword</button></form>';
+                $form .= '<form method="post" action="/rank-checks">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="keyword" value="' . Html::escape((string) $keyword['public_id']) . '"><button>Run rank check</button></form><p><a href="/rank-checks/history?website=' . $website . '&keyword=' . Html::escape((string) $keyword['public_id']) . '">View rank history</a></p>';
             }
             return $this->page($editing ? 'Edit keyword' : 'Add keyword', $form);
         } catch (AuthorizationException $exception) { return $this->denied($exception); }

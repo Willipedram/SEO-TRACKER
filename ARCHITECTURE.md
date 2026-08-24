@@ -150,8 +150,9 @@ control plane so Apache/DirectAdmin does not require a resident worker. A minute
 invokes a bounded CLI worker; enrolled agents may outbound-poll and atomically lease
 eligible work. Attempts, executor provenance, modeled/native device semantics, and
 network context are immutable. Provider/server execution never claims the user's IP,
-and fallback never silently changes execution source. See `RANK_TRACKING.md` and ADR
-0012; no engine is implemented in Phase 09.
+and fallback never silently changes execution source. Phase 10 implements this queue
+and adapter boundary, while live adapters remain disabled pending ADR 0012 approval.
+See `RANK_TRACKING.md` and ADR 0012.
 
 ## Logging, errors, and observability
 

@@ -99,3 +99,10 @@ after itself, cache/queue check if configured, scheduler setup verification, and
 permissions/web-root exposure check. Create the first administrator through a
 one-time secure flow, not a seeded password. Remove the bootstrap token and retain
 an install report containing versions and checks but no secrets.
+
+## Rank worker cron
+
+After a Rank Tracking adapter is separately approved, registered, and configured,
+schedule `php /path/to/bin/console rank:work --limit=10` once per minute in
+DirectAdmin cron. Leave this cron absent while `RANK_ADAPTER` is blank; rank
+submission is then explicitly unavailable rather than queued indefinitely.

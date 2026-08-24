@@ -87,8 +87,8 @@ identity/access infrastructure. The module owns validation, lifecycle operations
 presentation, and route registration. Search engines and devices are configurable
 keys; it does not reference a rank-tracking provider or observation schema.
 
-Phase 09 keeps `RankTracking` unimplemented while accepting its architecture. The
-future module owns request/attempt/result contracts and execution-adapter ports.
+Phase 10 enables `RankTracking`, which owns request/attempt/result contracts,
+database queue processing, status/history presentation, and execution-adapter ports.
 `local_agent`, `provider_api`, and approved `server_adapter` implementations remain
 replaceable infrastructure; Core, Websites, and Keywords do not depend on them.
 Optional Search Console remains unrelated to rank execution.

@@ -161,3 +161,13 @@ must not enter ordinary logs, queue payloads, URLs, or exports. Exact IP retenti
 off by default and requires a documented purpose, legal basis/notice, encryption,
 strict access, short retention, and audit. Agent execution is described as its
 observed network path, not proof of residential address or physical location.
+
+Phase 10 registers no production execution adapter by default. The manager refuses
+submission unless the configured key resolves to an approved adapter. Requests are
+resolved through owner-scoped website/keyword joins and require `rank_tracking.run`;
+status/history require `rank_tracking.view` plus request ownership. POST submission
+uses global CSRF. Adapter output is structurally validated, must declare compatible
+device semantics, and late/duplicate results are rejected. Only allow-listed error
+codes and fixed safe messages reach database/UI; adapter exception text, credentials,
+raw response bodies, IPs, and arbitrary URLs do not. Provider execution records
+`provider_egress`, not user-IP execution.

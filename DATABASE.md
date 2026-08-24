@@ -106,10 +106,11 @@ tables. Partitioning/archive policy is deferred until measured volume justifies
 it. Raw provider responses are not retained by default; if required for diagnosis,
 store them encrypted or in protected object storage with short retention.
 
-Phase 09 creates no rank tables or migration. Names above are logical contracts for
-Phase 10 review. Queue indexes must support eligible-state/time/priority claims,
-lease expiry, request attempts, keyword chronology, and unique idempotent result
-acceptance. See `RANK_TRACKING.md` before finalizing DDL.
+Phase 10 schema version 7 implements these contracts as `rank_check_requests`,
+`rank_execution_attempts`, and immutable `rank_results`. Indexes support eligible
+queue claims, lease expiry, owner/keyword chronology, unique attempt numbering, and
+one accepted result per attempt. Existing website/keyword rows are retained and rank
+foreign keys use `RESTRICT` so history is not silently cascaded away.
 
 ### Optional Search Console
 
