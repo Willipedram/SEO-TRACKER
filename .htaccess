@@ -1,0 +1,19 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:app|bin|bootstrap|config|docs|routes|storage|tests|vendor)(?:/|$) - [F,L,NC]
+    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+    RewriteRule ^public/(.*)$ public/$1 [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<FilesMatch "^(?:\.|composer\.(?:json|lock)$|.*\.(?:md|log|sql|sqlite|bak))">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+</IfModule>

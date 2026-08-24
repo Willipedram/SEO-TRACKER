@@ -1,0 +1,6 @@
+{
+  "name": "RankTracking",
+  "version": "1.0.0",
+  "provider": "App\\Modules\\RankTracking\\Infrastructure\\RankTrackingModule",
+  "dependencies": ["Keywords"]
+}

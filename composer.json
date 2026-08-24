@@ -1,0 +1,36 @@
+{
+    "name": "seo-tracker/platform",
+    "description": "Modular SEO rank tracking platform",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-openssl": "*"
+    },
+    "require-dev": {
+        "ext-pdo_sqlite": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "scripts": {
+        "lint": "find app bootstrap config database public routes tests -name '*.php' -print0 | xargs -0 -n1 php -l && php -l index.php && php -l bin/console",
+        "test": "php tests/run.php",
+        "check": [
+            "@lint",
+            "@test",
+            "php bin/console app:check"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": false
+    }
+}

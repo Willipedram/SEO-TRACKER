@@ -1,0 +1,6 @@
+{
+  "name": "Reports",
+  "version": "1.0.0",
+  "provider": "App\\Modules\\Reports\\Infrastructure\\ReportsModule",
+  "dependencies": ["Websites", "Keywords", "RankTracking"]
+}
