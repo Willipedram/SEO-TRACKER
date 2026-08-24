@@ -95,7 +95,7 @@ final class WebsiteController
             [$manager, $auth] = $this->factory->services();
             $website = $manager->findForEdit($this->actor($auth), $this->id($request));
             $id = Html::escape((string) $website['public_id']);
-            $content = '<p><a href="/websites">All websites</a> · <a href="/websites/edit?id=' . $id . '">Edit</a> · <a href="/websites/settings?id=' . $id . '">Settings</a></p>';
+            $content = '<p><a href="/websites">All websites</a> · <a href="/websites/edit?id=' . $id . '">Edit</a> · <a href="/websites/settings?id=' . $id . '">Settings</a> · <a href="/keywords?website=' . $id . '">Keywords</a></p>';
             $content .= '<dl><dt>URL</dt><dd><code>' . Html::escape((string) $website['canonical_url']) . '</code></dd><dt>Status</dt><dd>' . Html::escape((string) $website['status']) . '</dd><dt>Timezone</dt><dd>' . Html::escape((string) $website['timezone']) . '</dd><dt>Description</dt><dd>' . nl2br(Html::escape((string) $website['description'])) . '</dd></dl>';
             $content .= '<section><h2>Tracking overview</h2><p>Keyword and rank tracking will become available in their respective modules.</p></section>';
             return $this->page((string) $website['site_name'], $content);

@@ -52,6 +52,13 @@ immutable owner, normalized domain, canonical HTTP(S) origin, protocol, descript
 IANA timezone, lifecycle status, and archive timestamp. `(owner_user_id,
 normalized_domain)` and public IDs are unique; owner/status is indexed.
 
+Phase 08 schema version 6 adds `keywords` with a website foreign key, opaque public
+ID, display/normalized text, optional target URL, engine/country/language/device
+keys, active state, and timestamps. The composite tracking configuration is unique;
+website/active and engine/market/device/active access paths are indexed for later
+selection of configured work. Website deletion cascades keyword configuration, but
+website lifecycle currently archives rather than deletes.
+
 ### Identity and access
 
 - `users`: login/profile state, verified/disabled timestamps, password hash where
@@ -73,7 +80,8 @@ are never stored in plaintext.
 - `website_user` only if shared website membership is required; otherwise the
   explicit owner reference is sufficient. Do not create speculative join tables.
 - `keywords`: website reference, normalized query and original display query,
-  locale/country, search engine, active state, and stable identity.
+  target URL, language/country, provider-neutral search-engine/device keys, active
+  state, and opaque public ID. See `KEYWORDS.md`.
 - `keyword_targets`: optional future table only if multiple device/location target
   combinations per keyword are confirmed. Device must be part of the observation
   key even if configuration initially supports desktop/mobile only.

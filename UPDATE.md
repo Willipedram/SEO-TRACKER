@@ -7,8 +7,8 @@ HTTP request.
 
 ## Implemented version contract
 
-`config/version.php` is the source authority for application version `0.7.0` and
-target schema version `5`. Persistent `app_installations.source_version` and
+`config/version.php` is the source authority for application version `0.8.0` and
+target schema version `6`. Persistent `app_installations.source_version` and
 `schema_version` record what successfully completed. Migration files are ordered by
 strict timestamp identifiers, each declare one unique integer schema version, and
 successful IDs are stored in `migrations`. Source older than the installed source
@@ -96,6 +96,9 @@ It does not implement or modify website, keyword, ranking, or integration data.
 
 Phase 07 schema version 5 adds the owner-scoped website table and indexes. It does
 not create, transform, archive, or delete website rows during upgrade.
+
+Phase 08 schema version 6 adds keyword configuration and lookup indexes. The
+migration creates no keyword rows and does not modify website or identity data.
 
 ## Shared-host limitations
 

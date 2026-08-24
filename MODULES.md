@@ -79,5 +79,10 @@ where needed.
 
 Phase 07 enables `Websites`. Its normalization value object, lifecycle service,
 presentation controller, and factory live under `app/Modules/Websites`; centrally
-discovered release migrations remain under `database/migrations`. The module does
-not reference future Keywords, Rank Tracking, or Search Console implementations.
+discovered release migrations remain under `database/migrations`. Its domain and
+application layers do not depend on Keywords, Rank Tracking, or Search Console.
+
+Phase 08 enables `Keywords`, depending only on the `Websites` module plus Core
+identity/access infrastructure. The module owns validation, lifecycle operations,
+presentation, and route registration. Search engines and devices are configurable
+keys; it does not reference a rank-tracking provider or observation schema.

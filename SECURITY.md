@@ -136,3 +136,11 @@ invalid/non-ASCII hosts, and unsupported protocols. Mutations use CSRF-protected
 POST requests, explicit fields, parameterized queries, escaped output, transactions,
 and allow-listed audit metadata. Archive replaces destructive deletion. See
 `WEBSITES.md`.
+
+Phase 08 scopes every keyword lookup through a website selected by opaque ID and
+authenticated owner, then requires the corresponding `keywords.*` permission. This
+prevents changing keyword or website IDs to cross ownership boundaries. Forms use
+the global CSRF guard, explicit field mapping, bounded validation, parameterized SQL,
+escaped HTML, fixed local redirects, transactions, and metadata-minimized audits.
+Optional target URLs reject non-HTTP(S) schemes, credentials, and fragments and are
+never fetched. See `KEYWORDS.md`.

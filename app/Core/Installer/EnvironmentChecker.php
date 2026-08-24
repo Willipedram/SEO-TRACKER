@@ -13,7 +13,7 @@ final class EnvironmentChecker
         $checks = [
             $this->result('PHP 8.2 or newer', version_compare(PHP_VERSION, '8.2.0', '>='), 'Ask your host to select PHP 8.2 or newer for both the domain and CLI.'),
         ];
-        foreach (['json', 'pdo', 'pdo_mysql', 'session'] as $extension) {
+        foreach (['json', 'mbstring', 'pdo', 'pdo_mysql', 'session'] as $extension) {
             $checks[] = $this->result('PHP extension: ' . $extension, extension_loaded($extension), 'Enable the ' . $extension . ' PHP extension in DirectAdmin or ask your host.');
         }
         foreach (['storage/logs', 'storage/framework/sessions', 'bootstrap/cache'] as $directory) {
