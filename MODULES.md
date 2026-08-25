@@ -1,5 +1,7 @@
 # Module Architecture
 
+Phase 18 centralizes module metadata and status. Core, Authentication, Websites, Keywords, Rank Tracking, and Settings are locked foundational modules; Reports and Search Console are toggleable. Search Console disablement preserves OAuth and synchronized data. See `SETTINGS.md` and ADR 0020.
+
 The Reports 1.0.0 module depends on Websites, Keywords, and Rank Tracking. It does not depend on Search Console source code; persisted Search Console data is an optional report source and disabled/unavailable states do not affect Rank Tracker reports.
 
 Search Console 1.4.0 owns its dashboard and combined-analysis queries, presentation, and localization. It may depend on Rank Tracking for Phase 16 comparison views, but Rank Tracking never depends on Search Console and continues booting when the optional module is disabled or absent.

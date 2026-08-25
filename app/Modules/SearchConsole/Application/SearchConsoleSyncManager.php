@@ -10,16 +10,18 @@ use App\Core\Rbac\Authorization;
 use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
+use Closure;
 
 final class SearchConsoleSyncManager
 {
     public const SEARCH_TYPES = ['web', 'image', 'video', 'news', 'discover', 'googleNews'];
 
-    public function __construct(private readonly Database $database, private readonly Authorization $authorization, private readonly AuditRecorder $audit, private readonly int $maxRangeDays = 31) {}
+    public function __construct(private readonly Database $database, private readonly Authorization $authorization, private readonly AuditRecorder $audit, private readonly int $maxRangeDays = 31, private readonly ?Closure $featureEnabled = null) {}
 
     public function submit(int $actorId, string $websitePublicId, string $startDate, string $endDate, string $searchType): string
     {
         $this->authorization->require($actorId, 'search_console.sync');
+        if ($this->featureEnabled !== null && !($this->featureEnabled)('feature.search_console_sync')) throw new InvalidArgumentException('Search Console synchronization is temporarily disabled.');
         [$start, $end] = $this->range($startDate, $endDate);
         if (!in_array($searchType, self::SEARCH_TYPES, true)) throw new InvalidArgumentException('Select a supported Search Console search type.');
         $selection = $this->selection($actorId, $websitePublicId);

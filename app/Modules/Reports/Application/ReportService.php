@@ -25,6 +25,7 @@ final class ReportService
     public function report(int $actorId, string $type, array $input = []): array
     {
         $this->authorization->require($actorId, 'reports.view');
+        $module = $this->database->fetchOne("SELECT enabled FROM modules WHERE module_key='reports'"); if ($module !== null && !(bool) $module['enabled']) throw new InvalidArgumentException('Reports module is disabled.');
         if (!in_array($type, self::TYPES, true)) throw new InvalidArgumentException('Unknown report type.');
         $filters = $this->filters($actorId, $input); $page = $this->positiveInt($input['page'] ?? 1, 1, 100000); $perPage = $this->positiveInt($input['per_page'] ?? 50, 1, 100); $offset = ($page - 1) * $perPage;
         if ($type === 'website') [$rows, $total] = $this->websites($actorId, $filters, $perPage, $offset);

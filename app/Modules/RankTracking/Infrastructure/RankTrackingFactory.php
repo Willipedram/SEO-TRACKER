@@ -14,6 +14,7 @@ use App\Core\Rbac\Authorization;
 use App\Modules\RankTracking\Application\RankCheckManager;
 use App\Modules\RankTracking\Application\RankWorker;
 use App\Modules\RankTracking\Application\RankDashboardService;
+use App\Core\Settings\SettingsManager;
 
 final class RankTrackingFactory
 {
@@ -24,7 +25,7 @@ final class RankTrackingFactory
         $database = (new ConnectionFactory($this->config))->connect();
         $registry = $this->registry ?? new RankAdapterRegistry();
         return [
-            new RankCheckManager($database, new Authorization($database), new AuditRecorder($database), $registry, (string) $this->config->get('rank_tracking.adapter', ''), (int) $this->config->get('rank_tracking.rate_limit', 10), (int) $this->config->get('rank_tracking.rate_window', 900)),
+            new RankCheckManager($database, $authorization = new Authorization($database), $audit = new AuditRecorder($database), $registry, (string) $this->config->get('rank_tracking.adapter', ''), (int) $this->config->get('rank_tracking.rate_limit', 10), (int) $this->config->get('rank_tracking.rate_window', 900), static fn (string $key): bool => (new SettingsManager($database, $authorization, $audit))->featureEnabled($key)),
             (new AuthFactory($this->basePath, $this->config))->make(),
         ];
     }

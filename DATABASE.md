@@ -1,5 +1,7 @@
 # Database Architecture
 
+Schema version 13 adds `managed_settings`, uniquely keyed by scope type, scope identifier, and registered setting key. JSON values retain validated types, writes retain the actor, and the table is not a substitute for domain storage.
+
 Schema version 12 adds non-destructive indexes for Search Console property/date filters, common dimensions, and latest-sync lookup; synchronized rows are not rewritten.
 
 ## Baseline

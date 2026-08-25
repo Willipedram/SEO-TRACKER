@@ -9,14 +9,16 @@ use App\Core\Rbac\AuditRecorder;
 use App\Core\Rbac\Authorization;
 use App\Modules\RankTracking\Infrastructure\RankAdapterRegistry;
 use InvalidArgumentException;
+use Closure;
 
 final class RankCheckManager
 {
-    public function __construct(private readonly Database $database, private readonly Authorization $authorization, private readonly AuditRecorder $audit, private readonly RankAdapterRegistry $adapters, private readonly string $adapterKey, private readonly int $rateLimit = 10, private readonly int $rateWindow = 900) {}
+    public function __construct(private readonly Database $database, private readonly Authorization $authorization, private readonly AuditRecorder $audit, private readonly RankAdapterRegistry $adapters, private readonly string $adapterKey, private readonly int $rateLimit = 10, private readonly int $rateWindow = 900, private readonly ?Closure $featureEnabled = null) {}
 
     public function submit(int $actorId, string $websitePublicId, string $keywordPublicId): string
     {
         $this->authorization->require($actorId, 'rank_tracking.run');
+        if ($this->featureEnabled !== null && !($this->featureEnabled)('feature.rank_manual_checks')) throw new InvalidArgumentException('Manual rank checks are temporarily disabled.');
         $adapter = $this->adapters->get($this->adapterKey);
         if ($adapter === null) throw new InvalidArgumentException('No approved Rank Tracking adapter is configured.');
         $keyword = $this->keyword($actorId, $websitePublicId, $keywordPublicId);

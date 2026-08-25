@@ -1,5 +1,7 @@
 # Security Foundations
 
+Phase 18 locks foundational modules, restricts system/module changes to `settings.manage`, self-scopes user preferences, audits changes, and rejects unknown or incorrectly typed settings. Secrets have no managed-setting definitions and remain in environment/encrypted stores.
+
 Phase 17 reports require `reports.view`, resolve Website/Keyword filters under the authenticated owner, bind SQL inputs, escape HTML cells, and cap pagination/export sizes. CSV string cells with formula-leading content are apostrophe-neutralized and downloads use `nosniff`.
 
 Search Console dashboard reads require `search_console.sync` and an owner-scoped Website lookup. Filters are allow-listed or length/format validated, SQL values are bound, stored dimensions are escaped, and OAuth credentials are never queried or rendered by the dashboard.

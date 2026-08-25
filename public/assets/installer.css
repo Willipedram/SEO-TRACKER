@@ -38,6 +38,7 @@ th, td { padding: .7rem; border-bottom: 1px solid #e8edf4; text-align: left; ver
 .source-label { padding: .7rem 1rem; border-radius: 8px; font-weight: 700; }
 .source-label.rank_tracker { color: #163ea5; background: #edf2ff; }
 .source-label.search_console { color: #12633f; background: #eaf8f0; }
+.setting-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 1rem; align-items: end; padding: .8rem 0; border-bottom: 1px solid #e8edf4; }
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .url-cell { max-width: 260px; overflow-wrap: anywhere; }
 .change { white-space: nowrap; font-weight: 700; }
@@ -59,4 +60,5 @@ th, td { padding: .7rem; border-bottom: 1px solid #e8edf4; text-align: left; ver
     .card { padding: 1rem; border-radius: 10px; }
     .filters { grid-template-columns: 1fr; }
     .source-grid { grid-template-columns: 1fr; }
+    .setting-row { grid-template-columns: 1fr; }
 }

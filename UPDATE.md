@@ -1,6 +1,6 @@
 # Update Architecture
 
-Current source authority is application **1.6.0**, database schema **12**. Phase 17 adds the Reports 1.0.0 module without a schema migration and requires a database with SQL window-function support for movement classifications.
+Current source authority is application **1.7.0**, database schema **13**. Phase 18 creates the scoped `managed_settings` store and registers foundational/module status metadata without changing domain or Search Console records.
 
 Phase 04 implements source/database version detection and a forward-only migration
 runner. Updates remain release-based, authenticated, observable, and recoverable;

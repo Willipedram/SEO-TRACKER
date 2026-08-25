@@ -19,6 +19,7 @@ use App\Modules\SearchConsole\Application\SearchConsoleDashboardService;
 use App\Modules\SearchConsole\Application\CombinedAnalyticsService;
 use App\Core\Logging\Logger;
 use App\Core\Localization\Translator;
+use App\Core\Settings\SettingsManager;
 
 final class SearchConsoleFactory
 {
@@ -52,7 +53,7 @@ final class SearchConsoleFactory
     {
         $database = (new ConnectionFactory($this->config))->connect();
         return [
-            new SearchConsoleSyncManager($database, new Authorization($database), new AuditRecorder($database), (int) $this->config->get('search_console_sync.max_range_days', 31)),
+            new SearchConsoleSyncManager($database, $authorization = new Authorization($database), $audit = new AuditRecorder($database), (int) $this->config->get('search_console_sync.max_range_days', 31), static fn (string $key): bool => (new SettingsManager($database, $authorization, $audit))->featureEnabled($key)),
             (new AuthFactory($this->basePath, $this->config))->make(),
         ];
     }
