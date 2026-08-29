@@ -6,6 +6,21 @@ use App\Core\Http\Request;
 
 ini_set('display_errors', '0');
 
+require __DIR__ . '/runtime-preflight.php';
+$runtime = seo_tracker_runtime_preflight();
+if (!$runtime['supported']) {
+    http_response_code(503);
+    header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
+    echo json_encode([
+        'error' => 'نسخه PHP دامنه پشتیبانی نمی‌شود. در DirectAdmin نسخه PHP وب‌سایت را روی 8.2 یا جدیدتر تنظیم کنید.',
+        'error_code' => 'unsupported_php_version',
+        'current_php' => $runtime['current'],
+        'required_php' => $runtime['required'] . '+',
+    ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    return;
+}
+
 $application = null;
 $request = null;
 

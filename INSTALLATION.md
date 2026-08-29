@@ -4,6 +4,12 @@ Application **2.4.0** targets database schema **14** and supports PHP 8.2+ with
 MySQL/MariaDB. The complete DirectAdmin upload, web-root, PHP, Apache, permissions,
 secrets, TLS, cron, backup, and update runbook is `DEPLOYMENT_DIRECTADMIN.md`.
 
+The domain's web PHP handler must itself be PHP 8.2 or newer; changing only the SSH or
+cron `php` binary is insufficient. A pre-kernel runtime check returns the stable
+`unsupported_php_version` error before PHP loads application classes that use PHP 8.2
+syntax. In DirectAdmin, select PHP 8.2+ for the affected domain and verify it with a
+temporary `phpinfo()` page, then delete that page immediately.
+
 ## Supported installation modes
 
 ### Web wizard (standard shared-host path)
