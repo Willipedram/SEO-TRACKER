@@ -15,6 +15,7 @@ final class Request
         public readonly array $cookies = [],
         public readonly string $scheme = 'http',
         public readonly string $remoteAddress = '0.0.0.0',
+        public readonly string $baseUrl = '',
     ) {}
 
     public static function capture(): self
@@ -28,14 +29,27 @@ final class Request
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         $path = self::normalizePath($path, (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        return new self(strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'), '/' . ltrim($path, '/'), $_GET, $_POST, array_change_key_case($headers, CASE_LOWER), $_COOKIE, $scheme, (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'));
+        return new self(strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'), '/' . ltrim($path, '/'), $_GET, $_POST, array_change_key_case($headers, CASE_LOWER), $_COOKIE, $scheme, (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'), self::baseUrl((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+    }
+
+    public static function baseUrl(string $scriptName): string
+    {
+        $script = '/' . ltrim(str_replace('\\', '/', $scriptName), '/');
+        $directory = rtrim(str_replace('\\', '/', dirname($script)), '/.');
+
+        // When the public front controller is used, /public belongs to the
+        // release layout and is not part of the URL at which it was mounted.
+        if (str_ends_with($script, '/public/index.php')) {
+            $directory = rtrim(str_replace('\\', '/', dirname($directory)), '/.');
+        }
+
+        return $directory === '/' ? '' : $directory;
     }
 
     public static function normalizePath(string $path, string $scriptName = ''): string
     {
         $path = '/' . ltrim($path, '/');
-        $script = '/' . ltrim(str_replace('\\', '/', $scriptName), '/');
-        $directory = rtrim(str_replace('\\', '/', dirname($script)), '/.');
+        $directory = self::baseUrl($scriptName);
 
         // DirectAdmin may expose an extracted release below the domain root.
         // Strip only the directory of the executing front controller.

@@ -20,6 +20,20 @@ final class BootstrapTest extends TestCase
         $this->assertSame('/', Request::normalizePath('/public/index.php', '/public/index.php'));
         $this->assertSame('/', Request::normalizePath('/seo-tracker/', '/seo-tracker/index.php'));
         $this->assertSame('/install', Request::normalizePath('/seo-tracker/install', '/seo-tracker/index.php'));
+        $this->assertSame('/', Request::normalizePath('/seotrack', '/seotrack/public/index.php'));
+        $this->assertSame('/install', Request::normalizePath('/seotrack/install', '/seotrack/public/index.php'));
+        $this->assertSame('/seotrack', Request::baseUrl('/seotrack/public/index.php'));
+    }
+
+    public function testSubdirectoryMountPrefixesRedirectsAndHtmlLinks(): void
+    {
+        $application = require dirname(__DIR__, 2) . '/bootstrap/app.php';
+        $home = $application->handle(new Request('GET', '/', headers: ['host' => 'localhost'], baseUrl: '/seotrack'));
+        $this->assertSame('/seotrack/install', $home->headers['Location']);
+
+        $installer = $application->handle(new Request('GET', '/install', headers: ['host' => 'localhost'], baseUrl: '/seotrack'));
+        $this->assertTrue(str_contains($installer->body, 'href="/seotrack/assets/installer.css"'));
+        $this->assertTrue(str_contains($installer->body, 'href="/seotrack/install?step=database"'));
     }
 
     public function testPostKernelBootstrapFailuresUseNormalSafeErrorHandling(): void

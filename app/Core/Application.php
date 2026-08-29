@@ -54,17 +54,17 @@ final class Application
         try {
             $trustedHosts = (array) $this->config->get('app.trusted_hosts', []);
             if (!preg_match('/^(?:[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$/', $request->host()) || ($trustedHosts !== [] && !in_array($request->host(), $trustedHosts, true))) {
-                return SecurityHeaders::apply($this->localize(Response::json(['error' => 'Invalid host.'], 400)), $requestId, $request->scheme === 'https');
+                return SecurityHeaders::apply($this->mount($this->localize(Response::json(['error' => 'Invalid host.'], 400)), $request), $requestId, $request->scheme === 'https');
             }
             if (in_array($request->method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
                 $token = $request->header('x-csrf-token') ?? ($request->body['_token'] ?? null);
                 if (!Csrf::valid(is_string($token) ? $token : null)) {
-                    return SecurityHeaders::apply($this->localize(Response::json(['error' => 'Invalid CSRF token.'], 419)), $requestId, $request->scheme === 'https');
+                    return SecurityHeaders::apply($this->mount($this->localize(Response::json(['error' => 'Invalid CSRF token.'], 419)), $request), $requestId, $request->scheme === 'https');
                 }
             }
-            return SecurityHeaders::apply($this->localize($this->router->dispatch($request)), $requestId, $request->scheme === 'https');
+            return SecurityHeaders::apply($this->mount($this->localize($this->router->dispatch($request)), $request), $requestId, $request->scheme === 'https');
         } catch (Throwable $exception) {
-            return SecurityHeaders::apply($this->localize($this->errors->render($exception, $requestId)), $requestId, $request->scheme === 'https');
+            return SecurityHeaders::apply($this->mount($this->localize($this->errors->render($exception, $requestId)), $request), $requestId, $request->scheme === 'https');
         }
     }
 
@@ -136,5 +136,28 @@ final class Application
     private function localize(Response $response): Response
     {
         return (new UiLocalizer((string) $this->config->get('app.locale', 'fa'), $this->basePath))->response($response);
+    }
+
+    private function mount(Response $response, Request $request): Response
+    {
+        if ($request->baseUrl === '') {
+            return $response;
+        }
+
+        $headers = $response->headers;
+        if (isset($headers['Location']) && str_starts_with($headers['Location'], '/')) {
+            $headers['Location'] = $request->baseUrl . $headers['Location'];
+        }
+
+        $body = $response->body;
+        if (str_starts_with((string) ($headers['Content-Type'] ?? ''), 'text/html')) {
+            $body = preg_replace_callback(
+                '/(\\b(?:href|src|action)=["\'])\\/(?!\\/)/i',
+                static fn (array $match): string => $match[1] . $request->baseUrl . '/',
+                $body,
+            ) ?? $body;
+        }
+
+        return new Response($body, $response->status, $headers);
     }
 }
