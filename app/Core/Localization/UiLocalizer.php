@@ -133,12 +133,29 @@ final class UiLocalizer
     private function assets(DOMDocument $document): void
     {
         $heads = $document->getElementsByTagName('head'); if ($heads->length < 1) return;
+        $head = $heads->item(0); if (!$head instanceof DOMElement) return;
+        foreach (iterator_to_array($document->getElementsByTagName('link')) as $link) {
+            if ($link instanceof DOMElement && $link->getAttribute('href') === '/assets/installer.css') {
+                $link->parentNode?->removeChild($link);
+            }
+        }
+        $css = @file_get_contents($this->basePath . '/public/assets/installer.css');
+        if (is_string($css)) {
+            $style = $document->createElement('style');
+            $style->appendChild($document->createTextNode($css));
+            $head->appendChild($style);
+        }
         // Explicitly declare an empty icon so browsers do not generate an
         // unnecessary /favicon.ico request for installations without one.
         $icon = $document->createElement('link');
         $icon->setAttribute('rel', 'icon');
         $icon->setAttribute('href', 'data:,');
-        $heads->item(0)?->appendChild($icon);
-        $script = $document->createElement('script'); $script->setAttribute('src', '/assets/tooltips.js'); $script->setAttribute('defer', 'defer'); $heads->item(0)?->appendChild($script);
+        $head->appendChild($icon);
+        $javascript = @file_get_contents($this->basePath . '/public/assets/tooltips.js');
+        if (is_string($javascript)) {
+            $script = $document->createElement('script');
+            $script->appendChild($document->createTextNode($javascript));
+            $head->appendChild($script);
+        }
     }
 }

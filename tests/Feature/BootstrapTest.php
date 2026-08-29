@@ -34,8 +34,10 @@ final class BootstrapTest extends TestCase
         $this->assertSame('/seotrack/install', $home->headers['Location']);
 
         $installer = $application->handle(new Request('GET', '/install', headers: ['host' => 'localhost'], baseUrl: '/seotrack'));
-        $this->assertTrue(str_contains($installer->body, 'href="/assets/installer.css"'));
-        $this->assertTrue(str_contains($installer->body, 'src="/assets/tooltips.js"'));
+        $this->assertTrue(!str_contains($installer->body, '/assets/installer.css'));
+        $this->assertTrue(!str_contains($installer->body, '/assets/tooltips.js'));
+        $this->assertTrue(str_contains($installer->body, '<style>'));
+        $this->assertTrue(str_contains($installer->body, 'term-trigger'));
         $this->assertTrue(str_contains($installer->body, 'href="data:,"'));
         $this->assertTrue(str_contains($installer->body, 'href="/seotrack/install?step=database"'));
     }
@@ -46,10 +48,13 @@ final class BootstrapTest extends TestCase
         $installer = $application->handle(new Request('GET', '/seotrack/install', headers: ['host' => 'localhost']));
 
         $this->assertSame(200, $installer->status);
-        $this->assertTrue(str_contains($installer->body, 'href="/assets/installer.css"'));
-        $this->assertTrue(str_contains($installer->body, 'src="/assets/tooltips.js"'));
+        $this->assertTrue(!str_contains($installer->body, '/assets/installer.css'));
+        $this->assertTrue(!str_contains($installer->body, '/assets/tooltips.js'));
+        $this->assertTrue(str_contains($installer->body, '<style>'));
+        $this->assertTrue(str_contains($installer->body, 'term-trigger'));
         $this->assertTrue(str_contains($installer->body, 'href="data:,"'));
         $this->assertTrue(str_contains($installer->body, 'href="/seotrack/install?step=database"'));
+        $this->assertTrue(str_contains($installer->headers['Content-Security-Policy'], "'sha256-"));
 
         $css = $application->handle(new Request('GET', '/seotrack/assets/installer.css', headers: ['host' => 'localhost']));
         $this->assertSame(200, $css->status);
