@@ -54,17 +54,34 @@ final class Application
         try {
             $trustedHosts = (array) $this->config->get('app.trusted_hosts', []);
             if (!preg_match('/^(?:[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$/', $request->host()) || ($trustedHosts !== [] && !in_array($request->host(), $trustedHosts, true))) {
-                return SecurityHeaders::apply($this->localize(Response::json(['error' => 'Invalid host.'], 400)), $requestId, $request->scheme === 'https');
+                return SecurityHeaders::apply($this->mount($this->localize(Response::json(['error' => 'Invalid host.'], 400)), $request), $requestId, $request->scheme === 'https');
             }
             if (in_array($request->method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
                 $token = $request->header('x-csrf-token') ?? ($request->body['_token'] ?? null);
                 if (!Csrf::valid(is_string($token) ? $token : null)) {
-                    return SecurityHeaders::apply($this->localize(Response::json(['error' => 'Invalid CSRF token.'], 419)), $requestId, $request->scheme === 'https');
+                    return SecurityHeaders::apply($this->mount($this->localize(Response::json(['error' => 'Invalid CSRF token.'], 419)), $request), $requestId, $request->scheme === 'https');
                 }
             }
-            return SecurityHeaders::apply($this->localize($this->router->dispatch($request)), $requestId, $request->scheme === 'https');
+            $response = $this->router->dispatch($request);
+            if ($response->status === 404) {
+                $this->logger->warning('Route not found.', [
+                    'request_id' => $requestId,
+                    'method' => $request->method,
+                    'route_path' => $request->path,
+                    'mount_path' => $request->baseUrl === '' ? '/' : $request->baseUrl,
+                    'request_uri' => (string) ($_SERVER['REQUEST_URI'] ?? $request->path),
+                    'script_name' => (string) ($_SERVER['SCRIPT_NAME'] ?? ''),
+                    'script_filename' => (string) ($_SERVER['SCRIPT_FILENAME'] ?? ''),
+                    'document_root' => (string) ($_SERVER['DOCUMENT_ROOT'] ?? ''),
+                ]);
+                $response = new Response($response->body, $response->status, $response->headers + [
+                    'X-Route-Path' => preg_replace('/[\x00-\x1F\x7F]/', '', $request->path) ?? '/',
+                    'X-Mount-Path' => preg_replace('/[\x00-\x1F\x7F]/', '', $request->baseUrl === '' ? '/' : $request->baseUrl) ?? '/',
+                ]);
+            }
+            return SecurityHeaders::apply($this->mount($this->localize($response), $request), $requestId, $request->scheme === 'https');
         } catch (Throwable $exception) {
-            return SecurityHeaders::apply($this->localize($this->errors->render($exception, $requestId)), $requestId, $request->scheme === 'https');
+            return SecurityHeaders::apply($this->mount($this->localize($this->errors->render($exception, $requestId)), $request), $requestId, $request->scheme === 'https');
         }
     }
 
@@ -136,5 +153,28 @@ final class Application
     private function localize(Response $response): Response
     {
         return (new UiLocalizer((string) $this->config->get('app.locale', 'fa'), $this->basePath))->response($response);
+    }
+
+    private function mount(Response $response, Request $request): Response
+    {
+        if ($request->baseUrl === '') {
+            return $response;
+        }
+
+        $headers = $response->headers;
+        if (isset($headers['Location']) && str_starts_with($headers['Location'], '/')) {
+            $headers['Location'] = $request->baseUrl . $headers['Location'];
+        }
+
+        $body = $response->body;
+        if (str_starts_with((string) ($headers['Content-Type'] ?? ''), 'text/html')) {
+            $body = preg_replace_callback(
+                '/(\\b(?:href|src|action)=["\'])\\/(?!\\/)/i',
+                static fn (array $match): string => $match[1] . $request->baseUrl . '/',
+                $body,
+            ) ?? $body;
+        }
+
+        return new Response($body, $response->status, $headers);
     }
 }
