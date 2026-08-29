@@ -1,0 +1,6 @@
+{
+  "name": "SearchConsole",
+  "version": "1.4.0",
+  "provider": "App\\Modules\\SearchConsole\\Infrastructure\\SearchConsoleModule",
+  "dependencies": ["Websites", "RankTracking"]
+}
