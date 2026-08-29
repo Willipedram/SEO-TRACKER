@@ -1,0 +1,15 @@
+/* SEO Tracker presentation layer; vendor AdminLTE remains CDN-managed. */
+:root{--seo-brand:#0f766e;--seo-brand-dark:#134e4a;--seo-positive:#15803d;--seo-negative:#b91c1c}
+html[dir=rtl] body{font-family:Tahoma,"Segoe UI",sans-serif;text-align:start}
+.app-sidebar{inset-inline-start:0;inset-inline-end:auto}.app-header,.app-main,.app-footer{margin-inline-start:var(--lte-sidebar-width,250px);margin-inline-end:0}
+.sidebar-menu .nav-link{display:flex;align-items:center;gap:.65rem}.sidebar-menu .nav-icon{margin:0}.sidebar-menu .nav-link.active{background:var(--seo-brand)!important;color:#fff}
+.app-main{margin-top:1rem;margin-bottom:1rem;max-width:calc(100% - var(--lte-sidebar-width,250px) - 2rem);overflow:hidden}.app-content-header h1{font-size:1.65rem;margin:0}
+.seo-auth-card{width:min(100% - 2rem,560px);padding:2rem;margin:auto}.seo-standalone{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#ecfdf5,#f8fafc)!important}
+.adminlte-form label{display:grid;gap:.4rem;margin-block:.85rem}.adminlte-form.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;align-items:end}
+.table-scroll{overflow:auto;border-radius:.5rem}.table{min-width:680px}.card,.info-box,.small-box{border-radius:.75rem}.empty-state{padding:2rem;text-align:center;border:1px dashed #94a3b8;border-radius:.75rem;background:#f8fafc}
+.change.improved,.success{color:var(--seo-positive)}.change.dropped,.error{color:var(--seo-negative)}.url-cell,code,input[type=email],input[type=url]{direction:ltr;text-align:left;unicode-bidi:plaintext}
+.term-trigger{vertical-align:middle}.rank-chart{width:100%;height:auto;direction:ltr}
+.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-block:1rem}.dashboard-grid .info-box{min-height:110px}.info-box-number{font-size:1.8rem}
+@media(max-width:991.98px){.app-header,.app-main,.app-footer{margin-inline-start:0}.app-main{max-width:calc(100% - 1rem);margin-inline:.5rem}.app-sidebar{transform:translateX(100%)}.sidebar-open .app-sidebar{transform:translateX(0)}}
+@media(max-width:575.98px){.seo-auth-card{padding:1.15rem}.app-main{padding:1rem!important}.app-content-header h1{font-size:1.3rem}.table{min-width:600px}.navbar-brand{font-size:1rem}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
