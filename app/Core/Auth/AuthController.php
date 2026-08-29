@@ -52,7 +52,11 @@ final class AuthController
             if ($user === null) {
                 return Response::redirect('/login', 302);
             }
-            return $this->page('Account', '<p>Signed in as <strong>' . Html::escape((string) $user['name']) . '</strong> (' . Html::escape((string) $user['email']) . ').</p><form method="post" action="/logout">' . $this->csrf() . '<button type="submit">Sign out</button></form>');
+            $summary=$this->factory->dashboard((int)$user['id']);
+            $cards=''; foreach(['websites'=>'Websites','keywords'=>'Keywords','improved'=>'Improved keywords','dropped'=>'Dropped keywords','top10'=>'Top 10','top3'=>'Top 3','first'=>'Rank #1'] as $key=>$label)$cards.='<article class="info-box"><div class="info-box-content"><span class="info-box-text">'.$label.'</span><span class="info-box-number">'.(int)$summary[$key].'</span></div></article>';
+            $empty=$summary['websites']===0?'<div class="empty-state"><p>No websites have been added yet.</p><a class="btn btn-primary" href="/websites/create">Add the first website</a></div>':'';
+            $last=$summary['last_check']===null?'Not run yet':Html::escape((string)$summary['last_check']);
+            return $this->page('Account', '<p>Signed in as <strong>' . Html::escape((string) $user['name']) . '</strong> (' . Html::escape((string) $user['email']) . ').</p><section class="dashboard-grid" aria-label="Real rank tracking metrics">'.$cards.'</section>'.$empty.'<p>Last rank check: <span dir="ltr">'.$last.'</span></p><form method="post" action="/logout">' . $this->csrf() . '<button type="submit">Sign out</button></form>');
         } catch (Throwable) {
             return Response::json(['error' => 'Authentication is unavailable.'], 503);
         }

@@ -39,4 +39,5 @@ return [
     'module.05'=>'RankTracking',
     'module.06'=>'Reports',
     'module.07'=>'SearchConsole',
+    'dashboard.websites'=>'Websites','dashboard.keywords'=>'Keywords','dashboard.improved'=>'Improved keywords','dashboard.dropped'=>'Dropped keywords','dashboard.top10'=>'Top 10','dashboard.top3'=>'Top 3','dashboard.first'=>'Rank #1','dashboard.empty_websites'=>'No websites have been added yet.','dashboard.add_first'=>'Add the first website','dashboard.metrics'=>'Real rank tracking metrics','dashboard.last_check'=>'Last rank check:','dashboard.not_run'=>'Not run yet',
 ];
