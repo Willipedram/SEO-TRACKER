@@ -5,6 +5,9 @@ application versions and an independently monotonic database schema version.
 
 ## Unreleased — Phase 26
 
+- Lowered the supported PHP runtime baseline from 8.2 to 8.1 by replacing PHP 8.2
+  readonly-class declarations with PHP 8.1 readonly properties and aligning web
+  preflight, installer, deployment, Composer, and release requirements.
 - Persian is now the default locale across fresh installation and all HTTP UI flows.
 - Added centralized English-fallback UI localization, Persian terminology metadata,
   accessible English technical tooltips, structural RTL handling, and mixed-direction

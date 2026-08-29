@@ -6,17 +6,17 @@ namespace App\Modules\Keywords\Domain;
 
 use InvalidArgumentException;
 
-final readonly class KeywordInput
+final class KeywordInput
 {
     public function __construct(
-        public string $text,
-        public string $normalizedText,
-        public ?string $targetUrl,
-        public string $searchEngine,
-        public string $country,
-        public string $language,
-        public string $device,
-        public bool $active,
+        public readonly string $text,
+        public readonly string $normalizedText,
+        public readonly ?string $targetUrl,
+        public readonly string $searchEngine,
+        public readonly string $country,
+        public readonly string $language,
+        public readonly string $device,
+        public readonly bool $active,
     ) {}
 
     public static function from(array $values, array $engines, array $devices, array $countries): self

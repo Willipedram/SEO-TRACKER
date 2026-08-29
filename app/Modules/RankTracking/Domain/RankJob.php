@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\RankTracking\Domain;
 
-final readonly class RankJob
+final class RankJob
 {
     public function __construct(
-        public string $requestId,
-        public string $keyword,
-        public ?string $targetUrl,
-        public string $searchEngine,
-        public string $country,
-        public string $language,
-        public string $requestedDevice,
+        public readonly string $requestId,
+        public readonly string $keyword,
+        public readonly ?string $targetUrl,
+        public readonly string $searchEngine,
+        public readonly string $country,
+        public readonly string $language,
+        public readonly string $requestedDevice,
     ) {}
 }

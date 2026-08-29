@@ -15,7 +15,7 @@ primitives, and CLI checks.
 
 ## Decision
 
-Implement a deliberately small PHP 8.2 kernel with Composer PSR-4 metadata and no
+Implement a deliberately small PHP 8.1 kernel with Composer PSR-4 metadata and no
 third-party runtime package. Keep the inward module layering from ADR 0001. Use
 explicit bootstrap composition, prepared native PDO connections, immutable config,
 JSON-lines logging, exact-match routing, and module manifests. Keep abstractions

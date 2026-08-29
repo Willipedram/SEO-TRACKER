@@ -6,14 +6,14 @@ namespace App\Modules\Websites\Domain;
 
 use InvalidArgumentException;
 
-final readonly class WebsiteInput
+final class WebsiteInput
 {
     public function __construct(
-        public string $name,
-        public string $domain,
-        public string $url,
-        public string $protocol,
-        public string $description,
+        public readonly string $name,
+        public readonly string $domain,
+        public readonly string $url,
+        public readonly string $protocol,
+        public readonly string $description,
     ) {}
 
     public static function from(string $name, string $url, string $description): self

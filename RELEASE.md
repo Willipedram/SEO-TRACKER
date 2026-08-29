@@ -25,7 +25,7 @@ data, or disabled-module behavior.
 
 ## Final deployment procedure
 
-1. **Prerequisites:** select PHP 8.2+ with `json`, `mbstring`, `openssl`, `pdo`,
+1. **Prerequisites:** select PHP 8.1+ with `json`, `mbstring`, `openssl`, `pdo`,
    `pdo_mysql`, and `session`; use MySQL 8+/compatible MariaDB with `utf8mb4`; enable
    Apache rewrite/overrides; provision HTTPS before installation.
 2. **Backup existing systems:** pause cron, let bounded workers finish, create and

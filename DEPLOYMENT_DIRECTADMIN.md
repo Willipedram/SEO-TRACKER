@@ -9,7 +9,7 @@ Supervisor, systemd, Redis, or a persistent daemon.
 
 ### PHP
 
-- PHP 8.2 or newer for both the domain and the DirectAdmin cron/CLI binary.
+- PHP 8.1 or newer for both the domain and the DirectAdmin cron/CLI binary.
 - Extensions: `json`, `mbstring`, `openssl`, `pdo`, `pdo_mysql`, and `session`.
 - HTTPS stream access (`allow_url_fopen=On`) is required only when the optional Search
   Console module makes Google API requests. The implementation does not require cURL.

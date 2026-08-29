@@ -6,16 +6,16 @@ namespace App\Modules\RankTracking\Domain;
 
 use InvalidArgumentException;
 
-final readonly class RankExecutionResult
+final class RankExecutionResult
 {
     public function __construct(
-        public string $type,
-        public ?int $position,
-        public ?string $rankingUrl,
-        public int $checkedDepth,
-        public string $executionDevice,
-        public string $userAgentProfile,
-        public string $observedAt,
+        public readonly string $type,
+        public readonly ?int $position,
+        public readonly ?string $rankingUrl,
+        public readonly int $checkedDepth,
+        public readonly string $executionDevice,
+        public readonly string $userAgentProfile,
+        public readonly string $observedAt,
     ) {
         if (!in_array($type, ['ranked', 'not_found'], true) || $checkedDepth < 1 || $checkedDepth > 1000) {
             throw new InvalidArgumentException('Invalid rank result classification.');

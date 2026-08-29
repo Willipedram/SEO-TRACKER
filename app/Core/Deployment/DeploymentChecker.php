@@ -20,7 +20,7 @@ final class DeploymentChecker
     public function check(): array
     {
         $checks = [];
-        $checks[] = $this->result('php_version', version_compare(PHP_VERSION, '8.2.0', '>='), 'error', 'PHP 8.2 or newer is required.');
+        $checks[] = $this->result('php_version', version_compare(PHP_VERSION, '8.1.0', '>='), 'error', 'PHP 8.1 or newer is required.');
         foreach (['json', 'mbstring', 'openssl', 'pdo', 'pdo_mysql', 'session'] as $extension) {
             $checks[] = $this->result('extension_' . $extension, ($this->extensionLoaded)($extension), 'error', 'Required PHP extension: ' . $extension);
         }

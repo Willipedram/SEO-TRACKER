@@ -6,7 +6,7 @@ namespace App\Core\Modules;
 
 use App\Core\Config\Config;
 
-final readonly class ModuleContext
+final class ModuleContext
 {
-    public function __construct(public string $basePath, public Config $config) {}
+    public function __construct(public readonly string $basePath, public readonly Config $config) {}
 }

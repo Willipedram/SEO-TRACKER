@@ -12,7 +12,7 @@ and needs optional modules without the operational cost of distributed services.
 ## Decision
 
 Use a supported Laravel release, pinned during implementation after target-host
-verification, as one deployable modular monolith. Propose PHP 8.2+ as the baseline.
+verification, as one deployable modular monolith. Propose PHP 8.1+ as the baseline.
 Preserve Laravel conventions and isolate business capabilities under
 `app/Modules`, enforced through public contracts and architecture tests. Use Blade
 and progressively enhanced compiled assets initially. Node is build-time only.

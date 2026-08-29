@@ -13,7 +13,7 @@ if (!$runtime['supported']) {
     header('Content-Type: application/json; charset=utf-8');
     header('X-Content-Type-Options: nosniff');
     echo json_encode([
-        'error' => 'نسخه PHP دامنه پشتیبانی نمی‌شود. در DirectAdmin نسخه PHP وب‌سایت را روی 8.2 یا جدیدتر تنظیم کنید.',
+        'error' => 'نسخه PHP دامنه پشتیبانی نمی‌شود. در DirectAdmin نسخه PHP وب‌سایت را روی 8.1 یا جدیدتر تنظیم کنید.',
         'error_code' => 'unsupported_php_version',
         'current_php' => $runtime['current'],
         'required_php' => $runtime['required'] . '+',

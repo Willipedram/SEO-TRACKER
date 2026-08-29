@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Settings;
 
-final readonly class SettingDefinition
+final class SettingDefinition
 {
-    public function __construct(public string $key, public string $scope, public string $type, public mixed $default, public array $options = [], public bool $featureFlag = false, public bool $secure = false) {}
+    public function __construct(public readonly string $key, public readonly string $scope, public readonly string $type, public readonly mixed $default, public readonly array $options = [], public readonly bool $featureFlag = false, public readonly bool $secure = false) {}
 }

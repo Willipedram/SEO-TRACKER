@@ -13,7 +13,7 @@ a target design, not a description of implemented behavior.
 No runtime framework was inherited. Phase 02 verified that installing Laravel is
 not possible in the build environment and found that the foundation needs only a
 small HTTP/CLI kernel. The implemented target is therefore a Composer PSR-4
-**framework-light modular monolith** requiring PHP 8.2, JSON, and PDO. This avoids
+**framework-light modular monolith** requiring PHP 8.1, JSON, and PDO. This avoids
 shipping unaudited vendored code and keeps ordinary hosting requirements small.
 ADR 0006 supersedes ADR 0001; adopting a framework later requires another ADR and
 an incremental migration rather than parallel kernels.
