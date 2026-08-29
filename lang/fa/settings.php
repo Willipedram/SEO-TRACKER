@@ -1,0 +1,5 @@
+<?php
+return [
+ 'title'=>'مدیریت ماژول‌ها و تنظیمات','user_settings'=>'تنظیمات من','system_settings'=>'تنظیمات سامانه','module_settings'=>'تنظیمات ماژول','modules'=>'ماژول‌ها','reports'=>'گزارش‌ها','search_console'=>'سرچ کنسول گوگل','module'=>'ماژول','version'=>'نسخه','status'=>'وضعیت','action'=>'عملیات','ready'=>'فعال','disabled'=>'غیرفعال','unavailable'=>'در دسترس نیست','enable'=>'فعال‌سازی','disable'=>'غیرفعال‌سازی','enabled'=>'فعال','locked'=>'بنیادی — قفل‌شده','save'=>'ذخیره','access_denied'=>'دسترسی مجاز نیست',
+ 'setting_system.application_name'=>'نام برنامه','setting_system.locale'=>'زبان سامانه','setting_system.timezone'=>'منطقه زمانی سامانه','setting_user.locale'=>'زبان','setting_user.timezone'=>'منطقه زمانی','setting_user.items_per_page'=>'ردیف در صفحه','setting_module.reports.default_page_size'=>'اندازه صفحه گزارش','setting_module.search_console.default_range_days'=>'بازه پیش‌فرض سرچ کنسول','setting_feature.rank_manual_checks'=>'اجازه بررسی دستی رتبه','setting_feature.search_console_sync'=>'اجازه همگام‌سازی سرچ کنسول',
+];

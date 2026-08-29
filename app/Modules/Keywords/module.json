@@ -1,0 +1,6 @@
+{
+  "name": "Keywords",
+  "version": "1.0.0",
+  "provider": "App\\Modules\\Keywords\\Infrastructure\\KeywordsModule",
+  "dependencies": ["Websites"]
+}

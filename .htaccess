@@ -1,0 +1,23 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:app|bin|bootstrap|config|docs|routes|storage|tests|vendor)(?:/|$) - [F,L,NC]
+    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+    RewriteRule ^public/(.*)$ public/$1 [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_alias.c>
+    RedirectMatch 404 (?i)^/(?:app|bin|bootstrap|config|database|docs|lang|routes|storage|tests|vendor)(?:/|$)
+</IfModule>
+
+<FilesMatch "^(?:\.|composer\.(?:json|lock)$|.*\.(?:md|log|sql|sqlite|bak|zip|tar|tgz|gz))">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+</IfModule>
