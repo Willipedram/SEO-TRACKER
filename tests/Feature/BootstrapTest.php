@@ -34,7 +34,9 @@ final class BootstrapTest extends TestCase
         $this->assertSame('/seotrack/install', $home->headers['Location']);
 
         $installer = $application->handle(new Request('GET', '/install', headers: ['host' => 'localhost'], baseUrl: '/seotrack'));
-        $this->assertTrue(str_contains($installer->body, 'href="/seotrack/assets/installer.css"'));
+        $this->assertTrue(str_contains($installer->body, 'href="/assets/installer.css"'));
+        $this->assertTrue(str_contains($installer->body, 'src="/assets/tooltips.js"'));
+        $this->assertTrue(str_contains($installer->body, 'href="data:,"'));
         $this->assertTrue(str_contains($installer->body, 'href="/seotrack/install?step=database"'));
     }
 
@@ -46,6 +48,7 @@ final class BootstrapTest extends TestCase
         $this->assertSame(200, $installer->status);
         $this->assertTrue(str_contains($installer->body, 'href="/assets/installer.css"'));
         $this->assertTrue(str_contains($installer->body, 'src="/assets/tooltips.js"'));
+        $this->assertTrue(str_contains($installer->body, 'href="data:,"'));
         $this->assertTrue(str_contains($installer->body, 'href="/seotrack/install?step=database"'));
     }
 

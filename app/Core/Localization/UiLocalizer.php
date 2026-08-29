@@ -133,6 +133,12 @@ final class UiLocalizer
     private function assets(DOMDocument $document): void
     {
         $heads = $document->getElementsByTagName('head'); if ($heads->length < 1) return;
+        // Explicitly declare an empty icon so browsers do not generate an
+        // unnecessary /favicon.ico request for installations without one.
+        $icon = $document->createElement('link');
+        $icon->setAttribute('rel', 'icon');
+        $icon->setAttribute('href', 'data:,');
+        $heads->item(0)?->appendChild($icon);
         $script = $document->createElement('script'); $script->setAttribute('src', '/assets/tooltips.js'); $script->setAttribute('defer', 'defer'); $heads->item(0)?->appendChild($script);
     }
 }

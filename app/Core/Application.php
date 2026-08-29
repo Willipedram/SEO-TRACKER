@@ -172,11 +172,10 @@ final class Application
             $body = preg_replace_callback(
                 '/(\\b(?:href|src|action)=["\'])\\/(?!\\/)([^"\']*)/i',
                 static function (array $match) use ($request): string {
-                    // A virtual mount is only a routing prefix. Static files
-                    // are still served by the domain-root .htaccess from
-                    // /public/assets, so prefixing them produces a web-server
-                    // 404 before PHP can handle the request.
-                    if ($request->virtualMount && str_starts_with($match[2], 'assets/')) {
+                    // The compatibility .htaccess publishes /public/assets at
+                    // the domain-root /assets URL. Application routes may have
+                    // a mount prefix, but static files never do.
+                    if (str_starts_with($match[2], 'assets/')) {
                         return $match[1] . '/' . $match[2];
                     }
                     return $match[1] . $request->baseUrl . '/' . $match[2];
