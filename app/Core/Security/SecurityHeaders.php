@@ -13,7 +13,7 @@ final class SecurityHeaders
         $scriptHashes = self::inlineHashes($response->body, 'script');
         $styleHashes = self::inlineHashes($response->body, 'style');
         $headers = [
-            'Content-Security-Policy' => "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'" . $scriptHashes . "; style-src 'self'" . $styleHashes . "; img-src 'self' data:; connect-src 'self'; manifest-src 'self'",
+            'Content-Security-Policy' => "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net" . $scriptHashes . "; style-src 'self' https://cdn.jsdelivr.net" . $styleHashes . "; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self'; manifest-src 'self'",
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'DENY',

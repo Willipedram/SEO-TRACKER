@@ -74,7 +74,7 @@ final class ProductionReadinessTest extends TestCase
                 $this->assertTrue($name === '.gitignore' || str_ends_with($name, '/.gitignore') || $name === '.gitkeep' || !str_starts_with($name, '.git'), 'VCS metadata leaked into production release.');
                 $this->assertTrue(!preg_match('/\.(?:log|sqlite|bak|zip)$/i', $name), 'Runtime artifact leaked: ' . $name);
             }
-            foreach (['app/Core/Application.php', 'public/index.php', 'public/assets/installer.css', 'public/assets/tooltips.js', 'database/migrations/2026_08_27_000000_production_query_indexes.php'] as $required) {
+            foreach (['app/Core/Application.php', 'app/Core/Localization/AdminLayout.php', 'public/index.php', 'public/assets/installer.css', 'public/assets/phase27.css', 'public/assets/tooltips.js', 'docs/UI-ADMINLTE.md', 'database/migrations/2026_08_27_000000_production_query_indexes.php'] as $required) {
                 $this->assertTrue(in_array($required, $names, true), 'Required runtime file missing: ' . $required);
             }
         } finally {

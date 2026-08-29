@@ -39,4 +39,5 @@ return [
     'module.05'=>'ردیابی رتبه',
     'module.06'=>'گزارش‌ها',
     'module.07'=>'سرچ کنسول گوگل',
+    'dashboard.websites'=>'وب‌سایت‌ها','dashboard.keywords'=>'کلیدواژه‌ها','dashboard.improved'=>'کلیدواژه‌های بهبودیافته','dashboard.dropped'=>'کلیدواژه‌های افت‌کرده','dashboard.top10'=>'۱۰ رتبه برتر','dashboard.top3'=>'۳ رتبه برتر','dashboard.first'=>'رتبه ۱','dashboard.empty_websites'=>'هنوز وب‌سایتی اضافه نشده است.','dashboard.add_first'=>'افزودن اولین وب‌سایت','dashboard.metrics'=>'شاخص‌های واقعی ردیابی رتبه','dashboard.last_check'=>'آخرین بررسی رتبه:','dashboard.not_run'=>'هنوز اجرا نشده است',
 ];
