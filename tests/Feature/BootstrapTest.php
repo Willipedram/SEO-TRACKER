@@ -50,6 +50,16 @@ final class BootstrapTest extends TestCase
         $this->assertTrue(str_contains($installer->body, 'src="/assets/tooltips.js"'));
         $this->assertTrue(str_contains($installer->body, 'href="data:,"'));
         $this->assertTrue(str_contains($installer->body, 'href="/seotrack/install?step=database"'));
+
+        $css = $application->handle(new Request('GET', '/seotrack/assets/installer.css', headers: ['host' => 'localhost']));
+        $this->assertSame(200, $css->status);
+        $this->assertSame('text/css; charset=utf-8', $css->headers['Content-Type']);
+        $this->assertTrue(str_contains($css->body, ':root'));
+
+        $javascript = $application->handle(new Request('GET', '/seotrack/assets/tooltips.js', headers: ['host' => 'localhost']));
+        $this->assertSame(200, $javascript->status);
+        $this->assertSame('application/javascript; charset=utf-8', $javascript->headers['Content-Type']);
+        $this->assertTrue(str_contains($javascript->body, 'term-trigger'));
     }
 
     public function testPostKernelBootstrapFailuresUseNormalSafeErrorHandling(): void
