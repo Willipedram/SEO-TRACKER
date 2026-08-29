@@ -1,0 +1,6 @@
+{
+    "name": "Foundation",
+    "version": "1.0.0",
+    "provider": "App\\Modules\\Foundation\\Infrastructure\\FoundationModule",
+    "dependencies": []
+}
