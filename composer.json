@@ -1,0 +1,44 @@
+{
+    "name": "seo-tracker/platform",
+    "description": "Modular SEO rank tracking platform",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-openssl": "*"
+    },
+    "require-dev": {
+        "ext-curl": "*",
+        "ext-pdo_sqlite": "*",
+        "ext-zip": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "scripts": {
+        "lint": "find app bootstrap config database public routes tests -name '*.php' -print0 | xargs -0 -n1 php -l && php -l index.php && php -l bin/console && php -l bin/build-release",
+        "test": "php tests/run.php",
+        "test:unit": "php tests/run.php --suite=unit",
+        "test:integration": "php tests/run.php --suite=integration",
+        "test:e2e": "php tests/run.php --suite=e2e",
+        "test:feature": "php tests/run.php --suite=feature",
+        "test:architecture": "php tests/run.php --suite=architecture",
+        "coverage": "php -d xdebug.mode=coverage tests/run.php --coverage=storage/logs/coverage.txt",
+        "check": [
+            "@lint",
+            "@test",
+            "php bin/console app:check"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": false
+    }
+}

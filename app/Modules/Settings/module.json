@@ -1,0 +1,6 @@
+{
+  "name": "Settings",
+  "version": "1.0.0",
+  "provider": "App\\Modules\\Settings\\Infrastructure\\SettingsModule",
+  "dependencies": ["Foundation"]
+}
