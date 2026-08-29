@@ -197,3 +197,9 @@ Executable changes require unit, feature, integration, and architecture tests as
 appropriate; static analysis, formatting, dependency/security audit, migration
 tests against supported databases, and a production build. Phase 02 provides a
 dependency-free test runner until a test framework is deliberately adopted.
+
+Phase 19 makes security boundary validation executable: deployment mode gates debug
+rendering, session configuration is fail-closed, OAuth redirects are parsed rather
+than prefix-matched, sensitive logs are recursively redacted, and transport/browser
+headers are scheme-aware. These controls remain in Core so optional modules cannot
+weaken the common HTTP, session, redirect, or logging boundaries.

@@ -35,7 +35,11 @@ final class AuthController
         }
         try {
             $result = $this->factory->make()->login($email, $password, $request->remoteAddress);
-            return $result->success ? Response::redirect('/account') : $this->page('Sign in', $this->loginForm($result->message), 422);
+            if ($result->success) {
+                Csrf::rotate();
+                return Response::redirect('/account');
+            }
+            return $this->page('Sign in', $this->loginForm($result->message), 422);
         } catch (Throwable) {
             return $this->page('Sign in', $this->loginForm('Authentication is temporarily unavailable.'), 503);
         }

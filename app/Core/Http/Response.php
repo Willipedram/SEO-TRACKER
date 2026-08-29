@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core\Http;
 
+use InvalidArgumentException;
+
 final class Response
 {
     public function __construct(
@@ -24,6 +26,9 @@ final class Response
 
     public static function redirect(string $location, int $status = 303): self
     {
+        if ($location === '' || strlen($location) > 2048 || preg_match('/[\x00-\x1F\x7F]/', $location)) {
+            throw new InvalidArgumentException('Invalid redirect location.');
+        }
         return new self('', $status, ['Location' => $location]);
     }
 

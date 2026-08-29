@@ -19,6 +19,16 @@ final class BootstrapTest extends TestCase
         $this->assertSame(302, $response->status);
         $this->assertSame('/install', $response->headers['Location']);
         $this->assertSame('nosniff', $response->headers['X-Content-Type-Options']);
+        $this->assertTrue(str_contains($response->headers['Content-Security-Policy'], "object-src 'none'"));
+        $this->assertSame('same-origin', $response->headers['Cross-Origin-Resource-Policy']);
+        $this->assertTrue(!isset($response->headers['Strict-Transport-Security']));
+    }
+
+    public function testHstsIsOnlySentForHttpsRequests(): void
+    {
+        $application = require dirname(__DIR__, 2) . '/bootstrap/app.php';
+        $response = $application->handle(new Request('GET', '/missing', headers: ['host' => 'localhost'], scheme: 'https'));
+        $this->assertSame('max-age=31536000; includeSubDomains', $response->headers['Strict-Transport-Security']);
     }
 
     public function testUnknownRoutesAreSafe(): void

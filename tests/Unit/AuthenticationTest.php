@@ -67,6 +67,7 @@ final class AuthenticationTest extends TestCase
         [$auth, $session] = $this->auth();
         $session->set('auth', ['user_id' => '1']);
         $this->assertSame(null, $auth->user());
+        $this->assertTrue($session->invalidated);
         $session->set('auth', ['user_id' => 1, 'authenticated_at' => time() - 1000, 'last_activity' => time() - 1000]);
         $this->assertSame(null, $auth->user());
     }

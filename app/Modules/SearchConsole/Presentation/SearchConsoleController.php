@@ -9,6 +9,7 @@ use App\Core\Http\Response;
 use App\Core\Rbac\AuthorizationException;
 use App\Core\Security\Csrf;
 use App\Core\Security\Html;
+use App\Core\Security\SafeRedirect;
 use App\Modules\SearchConsole\Infrastructure\SearchConsoleFactory;
 use Throwable;
 use App\Modules\SearchConsole\Domain\SearchConsoleUnavailable;
@@ -85,7 +86,7 @@ final class SearchConsoleController
         try {
             [$connections, $auth] = $this->factory->connectionServices();
             $url = $connections->begin($this->actor($auth), $this->id($request->body['website'] ?? null, 'Website'));
-            if (!str_starts_with($url, 'https://accounts.google.com/')) throw new SearchConsoleUnavailable('invalid_authorization_redirect');
+            if (!SafeRedirect::isGoogleAuthorizationUrl($url)) throw new SearchConsoleUnavailable('invalid_authorization_redirect');
             return Response::redirect($url);
         } catch (AuthorizationException $exception) { return Response::json(['error' => $exception->getMessage()], 403); }
         catch (Throwable) { return Response::json(['error' => 'Search Console authorization could not be started.'], 422); }

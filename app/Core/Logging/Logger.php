@@ -9,7 +9,6 @@ use RuntimeException;
 final class Logger
 {
     private const LEVELS = ['debug' => 100, 'info' => 200, 'warning' => 300, 'error' => 400, 'critical' => 500];
-    private const REDACTED_KEYS = ['password', 'secret', 'token', 'authorization', 'cookie', 'app_key'];
 
     public function __construct(private readonly string $path, private readonly string $minimumLevel = 'info')
     {
@@ -43,7 +42,7 @@ final class Logger
     private function redact(array $context): array
     {
         foreach ($context as $key => $value) {
-            if (in_array(strtolower((string) $key), self::REDACTED_KEYS, true)) {
+            if (self::isSensitiveKey((string) $key)) {
                 $context[$key] = '[REDACTED]';
             } elseif (is_array($value)) {
                 $context[$key] = $this->redact($value);
@@ -64,6 +63,13 @@ final class Logger
 
     private static function redactString(string $value): string
     {
-        return preg_replace('/(?i)(password|secret|token|authorization|cookie|app[_-]?key)(\s*[=:]\s*)([^\s,;]+)/', '$1$2[REDACTED]', $value) ?? $value;
+        $value = preg_replace('/(?i)\bBearer\s+[A-Za-z0-9._~+\/-]+=*/', 'Bearer [REDACTED]', $value) ?? $value;
+        return preg_replace('/(?i)(password|passphrase|secret|(?:access|refresh|reset|api)?[_-]?token|authorization|cookie|session[_-]?id|(?:app|api|encryption)[_-]?key|credential[_-]?envelope)(\s*[=:]\s*)([^\s,;]+)/', '$1$2[REDACTED]', $value) ?? $value;
+    }
+
+    private static function isSensitiveKey(string $key): bool
+    {
+        $normalized = strtolower(str_replace('-', '_', $key));
+        return preg_match('/(?:password|passphrase|secret|token|authorization|cookie|session(?:_id)?|(?:app|api|encryption)_?key|credential|envelope)/', $normalized) === 1;
     }
 }

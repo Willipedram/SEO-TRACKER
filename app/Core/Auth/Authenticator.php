@@ -56,17 +56,17 @@ final class Authenticator
     {
         $auth = $this->session->get('auth');
         if (!is_array($auth) || !is_int($auth['user_id'] ?? null) || !is_int($auth['authenticated_at'] ?? null) || !is_int($auth['last_activity'] ?? null)) {
-            $this->session->remove('auth');
+            $this->session->invalidate();
             return null;
         }
         $now = time();
         if ($auth['last_activity'] < $now - $this->idleTimeout || $auth['authenticated_at'] < $now - $this->absoluteTimeout) {
-            $this->session->remove('auth');
+            $this->session->invalidate();
             return null;
         }
         $user = $this->database->fetchOne('SELECT id, name, email, disabled_at FROM users WHERE id = :id LIMIT 1', ['id' => $auth['user_id']]);
         if ($user === null || $user['disabled_at'] !== null) {
-            $this->session->remove('auth');
+            $this->session->invalidate();
             return null;
         }
         $auth['last_activity'] = $now;

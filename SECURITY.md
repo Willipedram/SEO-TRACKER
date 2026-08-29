@@ -211,3 +211,22 @@ and finite metrics are bounded server-side. API data is parameterized and escape
 responses and tokens never enter HTML, sync logs, or module logs. Only fixed error codes
 are persisted. Transient retries are capped with backoff; revoked credentials are wiped.
 See `SEARCH_CONSOLE_SYNC.md` and ADR 0016.
+
+## Phase 19 hardening review
+
+Phase 19 reviewed authentication, RBAC/owner-scoping, every registered state-changing
+route, HTML output, parameter binding, fixed provider endpoints, OAuth, filesystem
+access, sessions, headers, rate limits, secrets, logging, privacy, dependencies, and
+production error handling. Remediation is implemented in code rather than represented
+only by a checklist. Composite credential keys and bearer values are recursively
+redacted; rejected or expired authentication state invalidates the whole session;
+successful login rotates both session and CSRF identifiers; and production ignores
+debug display even if `APP_DEBUG` was accidentally enabled.
+
+External OAuth redirects must parse to the exact Google HTTPS origin, approved OAuth
+path, and permitted port, with no userinfo or control characters. Provider requests
+remain restricted to fixed Google HTTPS endpoints with redirects disabled. Response
+redirects reject control characters. CSP now denies plugins and explicitly confines
+scripts, styles, images, connections, forms and frames; CORP is same-origin; HSTS is
+sent only for an HTTPS request. Session lifetime and SameSite values are bounded and
+`SameSite=None` requires Secure cookies. See `SECURITY_AUDIT_PHASE19.md` and ADR 0021.

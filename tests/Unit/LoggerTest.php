@@ -37,4 +37,15 @@ final class LoggerTest extends TestCase
         @unlink($path);
         $this->assertTrue(!str_contains($contents, 'Bearer-secret-value'));
     }
+
+    public function testCompositeSecretKeysAndBearerCredentialsAreRedacted(): void
+    {
+        $path = sys_get_temp_dir() . '/seo-tracker-' . bin2hex(random_bytes(4)) . '.log';
+        (new Logger($path))->error('upstream Bearer abc.def.ghi', ['refresh_token' => 'refresh-value', 'credential_envelope' => 'ciphertext', 'session_id' => 'session-value']);
+        $contents = (string) file_get_contents($path);
+        @unlink($path);
+        foreach (['abc.def.ghi', 'refresh-value', 'ciphertext', 'session-value'] as $secret) {
+            $this->assertTrue(!str_contains($contents, $secret));
+        }
+    }
 }

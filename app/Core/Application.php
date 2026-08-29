@@ -42,7 +42,9 @@ final class Application
         $modules = new ModuleLoader((array) $config->get('modules.paths', []), (array) $config->get('modules.enabled', []), (array) $config->get('modules.optional', []));
         $modules->load($router, new ModuleContext($basePath, $config));
         require $basePath . '/routes/web.php';
-        return new self($basePath, $config, $router, $logger, $modules, new ErrorHandler($logger, (bool) $config->get('app.debug', false)), new ConnectionFactory($config));
+        $debug = strtolower((string) $config->get('app.env', 'production')) !== 'production'
+            && (bool) $config->get('app.debug', false);
+        return new self($basePath, $config, $router, $logger, $modules, new ErrorHandler($logger, $debug), new ConnectionFactory($config));
     }
 
     public function handle(Request $request): Response
@@ -51,17 +53,17 @@ final class Application
         try {
             $trustedHosts = (array) $this->config->get('app.trusted_hosts', []);
             if (!preg_match('/^(?:[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$/', $request->host()) || ($trustedHosts !== [] && !in_array($request->host(), $trustedHosts, true))) {
-                return SecurityHeaders::apply(Response::json(['error' => 'Invalid host.'], 400), $requestId);
+                return SecurityHeaders::apply(Response::json(['error' => 'Invalid host.'], 400), $requestId, $request->scheme === 'https');
             }
             if (in_array($request->method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
                 $token = $request->header('x-csrf-token') ?? ($request->body['_token'] ?? null);
                 if (!Csrf::valid(is_string($token) ? $token : null)) {
-                    return SecurityHeaders::apply(Response::json(['error' => 'Invalid CSRF token.'], 419), $requestId);
+                    return SecurityHeaders::apply(Response::json(['error' => 'Invalid CSRF token.'], 419), $requestId, $request->scheme === 'https');
                 }
             }
-            return SecurityHeaders::apply($this->router->dispatch($request), $requestId);
+            return SecurityHeaders::apply($this->router->dispatch($request), $requestId, $request->scheme === 'https');
         } catch (Throwable $exception) {
-            return SecurityHeaders::apply($this->errors->render($exception, $requestId), $requestId);
+            return SecurityHeaders::apply($this->errors->render($exception, $requestId), $requestId, $request->scheme === 'https');
         }
     }
 
@@ -78,7 +80,9 @@ final class Application
         session_save_path($sessionPath);
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
-        session_set_cookie_params($this->sessionCookieParameters());
+        $cookie = $this->sessionCookieParameters();
+        ini_set('session.gc_maxlifetime', (string) $cookie['lifetime']);
+        session_set_cookie_params($cookie);
         if (!session_start()) {
             throw new RuntimeException('Unable to start session.');
         }
@@ -86,10 +90,19 @@ final class Application
 
     public function sessionCookieParameters(): array
     {
+        $lifetime = (int) $this->config->get('session.lifetime', 43200);
+        $secure = (bool) $this->config->get('session.secure', true);
+        $sameSite = ucfirst(strtolower((string) $this->config->get('session.same_site', 'Lax')));
+        if ($lifetime < 300 || $lifetime > 604800) {
+            throw new RuntimeException('Session lifetime must be between 5 minutes and 7 days.');
+        }
+        if (!in_array($sameSite, ['Lax', 'Strict', 'None'], true) || ($sameSite === 'None' && !$secure)) {
+            throw new RuntimeException('Invalid session SameSite configuration.');
+        }
         return [
-            'lifetime' => (int) $this->config->get('session.lifetime', 43200),
-            'path' => '/', 'secure' => (bool) $this->config->get('session.secure', true),
-            'httponly' => true, 'samesite' => (string) $this->config->get('session.same_site', 'Lax'),
+            'lifetime' => $lifetime,
+            'path' => '/', 'secure' => $secure,
+            'httponly' => true, 'samesite' => $sameSite,
         ];
     }
 

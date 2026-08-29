@@ -18,4 +18,14 @@ final class CsrfTest extends TestCase
         $this->assertTrue(Csrf::valid($token));
         $this->assertTrue(!Csrf::valid(str_repeat('0', 64)));
     }
+
+    public function testRotationInvalidatesThePreviousToken(): void
+    {
+        $_SESSION = [];
+        $old = Csrf::token();
+        $new = Csrf::rotate();
+        $this->assertTrue($old !== $new);
+        $this->assertTrue(!Csrf::valid($old));
+        $this->assertTrue(Csrf::valid($new));
+    }
 }
