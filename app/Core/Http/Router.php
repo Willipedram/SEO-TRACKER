@@ -49,6 +49,12 @@ final class Router
         return $response;
     }
 
+    public function has(string $method, string $path): bool
+    {
+        $path = $path === '/' ? '/' : rtrim('/' . ltrim($path, '/'), '/');
+        return isset($this->routes[strtoupper($method)][$path]);
+    }
+
     public function all(): array
     {
         $result = [];
