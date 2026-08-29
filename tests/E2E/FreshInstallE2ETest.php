@@ -42,6 +42,9 @@ final class FreshInstallE2ETest extends TestCase
                 $home = $this->http($origin . '/');
                 $this->assertSame(302, $home['status']);
                 $this->assertSame('/install', $home['location']);
+                $frontController = $this->http($origin . '/index.php');
+                $this->assertSame(302, $frontController['status']);
+                $this->assertSame('/install', $frontController['location']);
                 $installer = $this->http($origin . '/install', cookie: $cookie);
                 $this->assertSame(200, $installer['status']);
                 $this->assertTrue(str_contains($this->decoded($installer['body']), 'بررسی محیط میزبانی'));

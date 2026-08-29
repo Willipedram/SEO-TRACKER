@@ -12,6 +12,16 @@ use Tests\TestCase;
 
 final class BootstrapTest extends TestCase
 {
+    public function testFrontControllerAndDirectAdminDirectoryPathsNormalizeToRoot(): void
+    {
+        $this->assertSame('/', Request::normalizePath('/', '/index.php'));
+        $this->assertSame('/', Request::normalizePath('/index.php', '/index.php'));
+        $this->assertSame('/install', Request::normalizePath('/index.php/install', '/index.php'));
+        $this->assertSame('/', Request::normalizePath('/public/index.php', '/public/index.php'));
+        $this->assertSame('/', Request::normalizePath('/seo-tracker/', '/seo-tracker/index.php'));
+        $this->assertSame('/install', Request::normalizePath('/seo-tracker/install', '/seo-tracker/index.php'));
+    }
+
     public function testPostKernelBootstrapFailuresUseNormalSafeErrorHandling(): void
     {
         $application = require dirname(__DIR__, 2) . '/bootstrap/app.php';

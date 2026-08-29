@@ -17,6 +17,14 @@ temporary `phpinfo()` page, then delete that page immediately.
 Open the final HTTPS domain after deploying a verified release. An uninstalled
 instance redirects to `/install`:
 
+Apache may present the front controller as `/index.php` on some DirectAdmin/FastCGI
+configurations. Both `/` and `/index.php` are normalized to the same application root;
+the latter must also redirect to `/install` on a fresh deployment. A JSON `Not found`
+response is a normal router 404 and therefore is not written as a critical application
+error. If it appears at the domain root, verify that the new `.htaccess`,
+`public/index.php`, and `public/runtime-preflight.php` were all uploaded together and
+that Apache allows `AllowOverride`/rewrite rules for the domain.
+
 1. **Environment check** verifies PHP 8.1+, `json`, `mbstring`, `openssl`, `pdo`,
    `pdo_mysql`, `session`, writable runtime paths, and ability to create `.env`.
 2. **Database** accepts the DirectAdmin MySQL/MariaDB host, port, exact panel-prefixed

@@ -26,8 +26,33 @@ final class Request
             }
         }
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $path = self::normalizePath($path, (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         return new self(strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'), '/' . ltrim($path, '/'), $_GET, $_POST, array_change_key_case($headers, CASE_LOWER), $_COOKIE, $scheme, (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'));
+    }
+
+    public static function normalizePath(string $path, string $scriptName = ''): string
+    {
+        $path = '/' . ltrim($path, '/');
+        $script = '/' . ltrim(str_replace('\\', '/', $scriptName), '/');
+        $directory = rtrim(str_replace('\\', '/', dirname($script)), '/.');
+
+        // DirectAdmin may expose an extracted release below the domain root.
+        // Strip only the directory of the executing front controller.
+        if ($directory !== '' && $directory !== '/' && ($path === $directory || str_starts_with($path, $directory . '/'))) {
+            $path = substr($path, strlen($directory)) ?: '/';
+        }
+
+        // Apache DirectoryIndex/FastCGI combinations can retain index.php in
+        // REQUEST_URI. It is an implementation detail, not an application route.
+        foreach (['/public/index.php', '/index.php'] as $frontController) {
+            if ($path === $frontController) return '/';
+            if (str_starts_with($path, $frontController . '/')) {
+                return '/' . ltrim(substr($path, strlen($frontController)), '/');
+            }
+        }
+
+        return $path;
     }
 
     public function header(string $name): ?string
