@@ -1,0 +1,5 @@
+<?php
+return [
+ 'title'=>'Module and settings management','user_settings'=>'My settings','system_settings'=>'System settings','module_settings'=>'Module settings','modules'=>'Modules','reports'=>'Reports','search_console'=>'Search Console','module'=>'Module','version'=>'Version','status'=>'Status','action'=>'Action','ready'=>'Enabled','disabled'=>'Disabled','unavailable'=>'Unavailable','enable'=>'Enable','disable'=>'Disable','enabled'=>'Enabled','locked'=>'Foundational — locked','save'=>'Save','access_denied'=>'Access denied',
+ 'setting_system.application_name'=>'Application name','setting_system.locale'=>'System locale','setting_system.timezone'=>'System timezone','setting_user.locale'=>'Locale','setting_user.timezone'=>'Timezone','setting_user.items_per_page'=>'Rows per page','setting_module.reports.default_page_size'=>'Reports default page size','setting_module.search_console.default_range_days'=>'Search Console default range','setting_feature.rank_manual_checks'=>'Allow manual rank checks','setting_feature.search_console_sync'=>'Allow Search Console synchronization',
+];

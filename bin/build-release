@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require dirname(__DIR__) . '/bootstrap/autoload.php';
+
+$output = $argv[1] ?? 'dist/seo-tracker-' . ((require dirname(__DIR__) . '/config/version.php')['application'] ?? 'release') . '.zip';
+try {
+    $result = (new App\Core\Deployment\ReleaseBuilder(dirname(__DIR__)))->build($output);
+    echo json_encode(['status' => 'complete'] + $result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+} catch (Throwable $exception) {
+    fwrite(STDERR, json_encode(['status' => 'failed', 'error' => $exception->getMessage()], JSON_THROW_ON_ERROR) . PHP_EOL);
+    exit(1);
+}
