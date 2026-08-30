@@ -1,5 +1,23 @@
 # Changelog
 
+## Phase 27 — Persian RTL AdminLTE interface
+
+- Replaced the earlier AdminLTE 4 release candidate with stable AdminLTE `4.9.1`
+  and upgraded the single Bootstrap runtime to compatible version `5.3.8`; CDN,
+  CSP, markup-contract and regression checks were re-audited for final closure.
+- Redesigned the installer as a responsive four-step, WordPress-inspired wizard and
+  added an explicit database detection decision: empty databases continue to clean
+  installation, existing SEO Tracker databases can enter the safe update workflow,
+  and unknown/existing data is never silently deleted for a clean installation.
+- Added the shared AdminLTE 4 application shell, standalone login/installer/update
+  layouts, responsive RTL navigation, permission/module-aware menus, and unified
+  Bootstrap-compatible forms, tables, alerts and empty states.
+- Preserved the real server-rendered workflows and Phase 26 terminology tooltips;
+  no AdminLTE demo content, fake metrics, fake notifications or sample credentials
+  are shipped.
+- Pinned and documented the frontend stack, hardened its CSP allowlist, and retained
+  nginx-safe inline delivery for application-owned CSS and tooltip behavior.
+
 All notable changes to SEO Tracker are documented here. The project uses semantic
 application versions and an independently monotonic database schema version.
 

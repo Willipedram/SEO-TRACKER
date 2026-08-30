@@ -15,6 +15,20 @@ $updater = new UpdaterController($basePath, $config);
 $auth = new AuthController(new AuthFactory($basePath, $config));
 $admin = new AdminController(new RbacFactory($basePath, $config));
 $router->get('/', static fn (): Response => $updater->home());
+$router->get('/assets/installer.css', static function () use ($basePath): Response {
+    $path = $basePath . '/public/assets/installer.css';
+    $content = is_file($path) ? file_get_contents($path) : false;
+    return is_string($content)
+        ? new Response($content, 200, ['Content-Type' => 'text/css; charset=utf-8', 'Cache-Control' => 'public, max-age=86400'])
+        : Response::json(['error' => 'Not found.'], 404);
+});
+$router->get('/assets/tooltips.js', static function () use ($basePath): Response {
+    $path = $basePath . '/public/assets/tooltips.js';
+    $content = is_file($path) ? file_get_contents($path) : false;
+    return is_string($content)
+        ? new Response($content, 200, ['Content-Type' => 'application/javascript; charset=utf-8', 'Cache-Control' => 'public, max-age=86400'])
+        : Response::json(['error' => 'Not found.'], 404);
+});
 $router->get('/install', static fn ($request): Response => $installer->show($request));
 $router->post('/install', static fn ($request): Response => $installer->submit($request));
 $router->get('/update', static fn (): Response => $updater->show());
