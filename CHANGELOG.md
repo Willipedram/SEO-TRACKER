@@ -2,6 +2,11 @@
 
 ## Phase 27 — Persian RTL AdminLTE interface
 
+- Forced a consistent light content theme while retaining the dark navigation,
+  removed double content-width subtraction, and refined panel/table/form surfaces.
+- Added direct rank-check actions to the ranking dashboard and an automatically
+  refreshing job-status state that clearly identifies the required bounded cron
+  worker instead of appearing permanently frozen.
 - Made the persistent installation lock an explicit deployment acknowledgement: a
   newly extracted source tree without that lock reopens the wizard, where the
   connected database is classified and the operator chooses clean install or update.

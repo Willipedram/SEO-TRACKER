@@ -195,6 +195,14 @@ sizing, and viewport overflow containment. Authenticated tables are automaticall
 placed inside `.seo-table-responsive`, so wide tabular data scrolls within its card
 instead of widening the dashboard or mobile viewport.
 
+Rank checks are deliberately queued. A production adapter must be registered and
+selected with `RANK_ADAPTER`; otherwise the dashboard shows a configuration warning
+and does not expose an action that can only fail. Configure DirectAdmin cron to run
+`php /absolute/path/bin/console rank:work --limit=10` at a bounded interval. Pending,
+running, and retry-wait status pages refresh every five seconds and explicitly show
+the worker command, while expired leases are recovered by the next worker run. The
+UI never fabricates a rank or runs an unapproved direct SERP scraper.
+
 All shared navbar/sidebar URLs are rendered with the detected physical or virtual mount
 prefix before HTML leaves the layout. The response mount pass recognizes already
 prefixed URLs, preventing both root-level links such as `/keywords` and accidental

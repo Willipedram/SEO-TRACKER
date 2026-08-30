@@ -53,4 +53,10 @@ final class RankTrackingFactory
         $locale = (string) $this->config->get('app.locale', 'fa');
         return in_array(explode('-', $locale, 2)[0], (array) $this->config->get('app.rtl_locales', []), true);
     }
+
+    public function executionAvailable(): bool
+    {
+        $key = (string) $this->config->get('rank_tracking.adapter', '');
+        return $key !== '' && ($this->registry ?? new RankAdapterRegistry())->get($key) !== null;
+    }
 }

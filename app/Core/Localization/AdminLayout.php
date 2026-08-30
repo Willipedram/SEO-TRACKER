@@ -22,6 +22,8 @@ final class AdminLayout
         $head = $document->getElementsByTagName('head')->item(0);
         $body = $document->getElementsByTagName('body')->item(0);
         if (!$head instanceof DOMElement || !$body instanceof DOMElement) return;
+        $root = $document->getElementsByTagName('html')->item(0);
+        if ($root instanceof DOMElement) $root->setAttribute('data-bs-theme', 'light');
 
         $this->dependency($document, $head, 'link', [
             'rel'=>'stylesheet', 'href'=>'https://cdn.jsdelivr.net/npm/bootstrap-icons@'.self::BOOTSTRAP_ICONS.'/font/bootstrap-icons.min.css',
@@ -49,6 +51,7 @@ final class AdminLayout
         }
 
         $body->setAttribute('class', 'layout-fixed sidebar-expand-lg bg-body-tertiary');
+        $body->setAttribute('data-bs-theme', 'light');
         $main = $document->getElementsByTagName('main')->item(0);
         if (!$main instanceof DOMElement) return;
         $main->setAttribute('class', trim($main->getAttribute('class').' app-main card border-0 shadow-sm p-4'));

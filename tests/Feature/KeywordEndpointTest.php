@@ -33,7 +33,7 @@ final class KeywordEndpointTest extends TestCase
         $pdo = new PDO('sqlite:' . $path, options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
         (new SchemaInstaller())->install($pdo, 'Administrator', 'admin@example.com', 'correct-horse-battery', 'Tracker');
         $database = new Database($pdo);
-        (new MigrationRunner($database, new MigrationDiscovery($base . '/database/migrations'), '0.8.0', 6, new Logger(sys_get_temp_dir() . '/seo-keyword-endpoint-migration.log')))->run();
+        (new MigrationRunner($database, new MigrationDiscovery($base . '/database/migrations'), '2.4.0', 14, new Logger(sys_get_temp_dir() . '/seo-keyword-endpoint-migration.log')))->run();
         $authorization = new Authorization($database);
         $audit = new AuditRecorder($database);
         $website = (new WebsiteManager($database, $authorization, $audit))->create(1, WebsiteInput::from('Site', 'https://example.com', ''));
@@ -58,6 +58,10 @@ final class KeywordEndpointTest extends TestCase
         $this->assertSame(200, $rankSelection->status);
         $this->assertTrue(str_contains($rankSelection->body, 'انتخاب وب‌سایت'));
         $this->assertTrue(str_contains($rankSelection->body, '/rank-dashboard?website=' . $website));
+        $rankDashboard = (new RankTrackingController(new RankTrackingFactory($base, $config)))->dashboard(new Request('GET', '/rank-dashboard', ['website'=>$website]));
+        $this->assertSame(200, $rankDashboard->status);
+        $this->assertTrue(str_contains($rankDashboard->body, 'موتور اجرای ردیابی رتبه پیکربندی نشده است.'));
+        $this->assertTrue(!str_contains($rankDashboard->body, 'action="/rank-checks"'));
         $database->execute("INSERT INTO users (name, email, password_hash, email_verified_at, disabled_at, created_at, updated_at) VALUES ('No Access', 'none@example.com', 'unused', NULL, NULL, '2026-01-01', '2026-01-01')");
         $limited = (int) $database->fetchOne('SELECT id FROM users WHERE email = :email', ['email' => 'none@example.com'])['id'];
         $_SESSION['auth'] = ['user_id' => $limited, 'authenticated_at' => time(), 'last_activity' => time()];

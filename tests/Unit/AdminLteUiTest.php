@@ -43,7 +43,7 @@ final class AdminLteUiTest extends TestCase
     public function testApplicationStylesCoverResponsiveRtlAndReducedMotion(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 2).'/public/assets/phase27.css');
-        foreach (['font-family:IRANSans','local("IRANSansX")','html[dir=rtl]','html,body{max-width:100%;overflow-x:hidden}','width:min(calc(100% - 2rem),560px)','.seo-table-responsive','@media(max-width:991.98px)','@media(max-width:575.98px)','prefers-reduced-motion','.rank-chart','.table-scroll','.installer-choice-grid'] as $required) $this->assertTrue(str_contains($css,$required));
+        foreach (['font-family:IRANSans','local("IRANSansX")','color-scheme:light','html[dir=rtl]','html,body{max-width:100%;overflow-x:hidden;color','width:min(calc(100% - 2rem),560px)','.app-main{width:auto;max-width:none','.seo-table-responsive','--bs-table-bg:#fff','.rank-job-wait','@media(max-width:991.98px)','@media(max-width:575.98px)','prefers-reduced-motion','.rank-chart','.table-scroll','.installer-choice-grid'] as $required) $this->assertTrue(str_contains($css,$required));
     }
 
     public function testCdnAndInlineAssetsHaveStrictCspCoverage(): void

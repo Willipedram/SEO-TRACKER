@@ -15,5 +15,6 @@ return [
     'chart_description' => 'Lower rank numbers appear higher. Missing observations are shown as gaps.',
     'choose_website' => 'Choose a website', 'choose_website_help' => 'Select a website to view its ranking dashboard.',
     'no_websites' => 'No websites have been added yet.', 'add_website' => 'Add the first website',
-    'domain' => 'Domain', 'keyword_count' => 'Keyword count', 'open_dashboard' => 'Open ranking dashboard',
+    'domain' => 'Domain', 'keyword_count' => 'Keyword count', 'open_dashboard' => 'Open ranking dashboard', 'run_check' => 'Run check',
+    'execution_unavailable' => 'Rank execution is not configured.', 'execution_help' => 'Configure an approved Rank Tracking adapter and run the bounded cron worker before submitting checks.',
 ];
