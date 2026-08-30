@@ -20,6 +20,73 @@ final class BootstrapTest extends TestCase
         $this->assertSame('/', Request::normalizePath('/public/index.php', '/public/index.php'));
         $this->assertSame('/', Request::normalizePath('/seo-tracker/', '/seo-tracker/index.php'));
         $this->assertSame('/install', Request::normalizePath('/seo-tracker/install', '/seo-tracker/index.php'));
+        $this->assertSame('/', Request::normalizePath('/seotrack', '/seotrack/public/index.php'));
+        $this->assertSame('/install', Request::normalizePath('/seotrack/install', '/seotrack/public/index.php'));
+        $this->assertSame('/seotrack', Request::baseUrl('/seotrack/public/index.php'));
+        $this->assertSame('/seotrack', Request::baseUrl('/index.php', '/home/user/domains/example/public_html/seotrack/public/index.php', '/home/user/domains/example/public_html'));
+        $this->assertSame('/install', Request::normalizePath('/seotrack/install', '/index.php', '/seotrack'));
+    }
+
+    public function testSubdirectoryMountPrefixesRedirectsAndHtmlLinks(): void
+    {
+        $application = require dirname(__DIR__, 2) . '/bootstrap/app.php';
+        $home = $application->handle(new Request('GET', '/', headers: ['host' => 'localhost'], baseUrl: '/seotrack'));
+        $this->assertSame('/seotrack/install', $home->headers['Location']);
+
+        $installer = $application->handle(new Request('GET', '/install', headers: ['host' => 'localhost'], baseUrl: '/seotrack'));
+        $this->assertTrue(!str_contains($installer->body, '/assets/installer.css'));
+        $this->assertTrue(!str_contains($installer->body, '/assets/tooltips.js'));
+        $this->assertTrue(str_contains($installer->body, '<style>'));
+        $this->assertTrue(str_contains($installer->body, 'term-trigger'));
+        $this->assertTrue(str_contains($installer->body, 'href="data:,"'));
+        $this->assertTrue(str_contains($installer->body, 'href="/seotrack/install?step=database"'));
+    }
+
+    public function testInstallerWizardShowsDatabaseDetectionChoicesWithoutDeletingData(): void
+    {
+        $application = require dirname(__DIR__, 2) . '/bootstrap/app.php';
+        $databaseForm=$application->handle(new Request('GET','/install',['step'=>'database'],headers:['host'=>'localhost']));
+        $databaseHtml=html_entity_decode($databaseForm->body,ENT_QUOTES|ENT_HTML5,'UTF-8');
+        $this->assertTrue(str_contains($databaseHtml,'name="host" value="localhost"'));
+        $_SESSION['installer_database_state'] = \App\Core\Installer\DatabaseInspector::APPLICATION;
+        $_SESSION['installer_database'] = ['host'=>'127.0.0.1','port'=>3306,'database'=>'existing','username'=>'user','password'=>'secret'];
+        $existing = $application->handle(new Request('GET', '/install', ['step'=>'database-detected'], headers: ['host'=>'localhost']));
+        $html = html_entity_decode($existing->body, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $this->assertSame(200, $existing->status);
+        foreach (['installer-steps','نصب موجود SEO Tracker شناسایی شد','به‌روزرسانی سیستم موجود','ادامه برای به‌روزرسانی','انتخاب پایگاه داده خالی'] as $required) $this->assertTrue(str_contains($html,$required));
+        $this->assertTrue(!str_contains($html,'DROP TABLE'));
+        $this->assertTrue(!str_contains($html,'secret'));
+
+        $_SESSION['installer_database_state'] = \App\Core\Installer\DatabaseInspector::EMPTY;
+        $empty = $application->handle(new Request('GET', '/install', ['step'=>'database-detected'], headers: ['host'=>'localhost']));
+        $emptyHtml = html_entity_decode($empty->body, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        foreach (['پایگاه داده خالی شناسایی شد','نصب تمیز','ادامه نصب تمیز','به‌روزرسانی سیستم موجود','به‌روزرسانی در دسترس نیست','هیچ جدول موجودی حذف نخواهد شد'] as $required) $this->assertTrue(str_contains($emptyHtml,$required));
+        unset($_SESSION['installer_database'],$_SESSION['installer_database_state']);
+    }
+
+    public function testDomainRootFrontControllerCanInferVirtualMountFromRoute(): void
+    {
+        $application = require dirname(__DIR__, 2) . '/bootstrap/app.php';
+        $installer = $application->handle(new Request('GET', '/seotrack/install', headers: ['host' => 'localhost']));
+
+        $this->assertSame(200, $installer->status);
+        $this->assertTrue(!str_contains($installer->body, '/assets/installer.css'));
+        $this->assertTrue(!str_contains($installer->body, '/assets/tooltips.js'));
+        $this->assertTrue(str_contains($installer->body, '<style>'));
+        $this->assertTrue(str_contains($installer->body, 'term-trigger'));
+        $this->assertTrue(str_contains($installer->body, 'href="data:,"'));
+        $this->assertTrue(str_contains($installer->body, 'href="/seotrack/install?step=database"'));
+        $this->assertTrue(str_contains($installer->headers['Content-Security-Policy'], "'sha256-"));
+
+        $css = $application->handle(new Request('GET', '/seotrack/assets/installer.css', headers: ['host' => 'localhost']));
+        $this->assertSame(200, $css->status);
+        $this->assertSame('text/css; charset=utf-8', $css->headers['Content-Type']);
+        $this->assertTrue(str_contains($css->body, ':root'));
+
+        $javascript = $application->handle(new Request('GET', '/seotrack/assets/tooltips.js', headers: ['host' => 'localhost']));
+        $this->assertSame(200, $javascript->status);
+        $this->assertSame('application/javascript; charset=utf-8', $javascript->headers['Content-Type']);
+        $this->assertTrue(str_contains($javascript->body, 'term-trigger'));
     }
 
     public function testPostKernelBootstrapFailuresUseNormalSafeErrorHandling(): void
@@ -63,9 +130,15 @@ final class BootstrapTest extends TestCase
     public function testUnknownRoutesAreSafe(): void
     {
         $application = require dirname(__DIR__, 2) . '/bootstrap/app.php';
-        $response = $application->handle(new Request('GET', '/missing', headers: ['host' => 'localhost']));
+        $requestId = 'missing-route-test-20260829';
+        $response = $application->handle(new Request('GET', '/missing', headers: ['host' => 'localhost', 'x-request-id' => $requestId]));
         $this->assertSame(404, $response->status);
         $this->assertSame('{"error":"یافت نشد."}', $response->body);
+        $this->assertSame('/missing', $response->headers['X-Route-Path']);
+        $this->assertSame('/', $response->headers['X-Mount-Path']);
+        $log = (string) file_get_contents(dirname(__DIR__, 2) . '/storage/logs/application.log');
+        $this->assertTrue(str_contains($log, $requestId));
+        $this->assertTrue(str_contains($log, 'Route not found.'));
     }
 
     public function testUntrustedHostIsRejected(): void
