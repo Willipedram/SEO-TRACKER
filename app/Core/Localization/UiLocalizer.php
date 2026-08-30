@@ -160,5 +160,11 @@ final class UiLocalizer
             $script->appendChild($document->createTextNode($javascript));
             $head->appendChild($script);
         }
+        $logbox = @file_get_contents($this->basePath . '/public/assets/logbox.js');
+        if (is_string($logbox)) {
+            $script = $document->createElement('script');
+            $script->appendChild($document->createTextNode($logbox));
+            $head->appendChild($script);
+        }
     }
 }
