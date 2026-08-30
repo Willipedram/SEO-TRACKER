@@ -2,6 +2,9 @@
 
 ## Phase 27 — Persian RTL AdminLTE interface
 
+- Replaced misleading context-free keyword/rank-dashboard 404 pages with an
+  owner-scoped website selector that carries the required website identifier into
+  the selected workflow.
 - Replaced the earlier AdminLTE 4 release candidate with stable AdminLTE `4.9.1`
   and upgraded the single Bootstrap runtime to compatible version `5.3.8`; CDN,
   CSP, markup-contract and regression checks were re-audited for final closure.
