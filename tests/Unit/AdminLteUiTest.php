@@ -31,7 +31,7 @@ final class AdminLteUiTest extends TestCase
     {
         $context = ['authenticated'=>true,'user'=>['name'=>'کاربر آزمون'],'version'=>'2.4.0','modules'=>['websites','keywords','settings'],'permissions'=>['websites.view','keywords.view']];
         $html = (new UiLocalizer('fa', dirname(__DIR__, 2)))->html('<!doctype html><html><head><title>Websites</title></head><body><main><h1>Websites</h1><p class="empty-state">No websites</p></main></body></html>', '/websites', $context);
-        foreach (['app-wrapper','app-sidebar','data-lte-toggle="sidebar"','href="/websites"','href="/keywords"','nav-link active','empty-state'] as $required) $this->assertTrue(str_contains($html,$required), 'Missing shell contract: '.$required);
+        foreach (['app-wrapper','app-sidebar','data-lte-toggle="sidebar"','href="/websites"','href="/keywords"','nav-link active','empty-state','id="seo-logbox"','data-logbox-copy'] as $required) $this->assertTrue(str_contains($html,$required), 'Missing shell contract: '.$required);
         foreach (['href="/admin/users"','href="/admin/roles"','search-console/dashboard','href="#"'] as $forbidden) $this->assertTrue(!str_contains($html,$forbidden), 'Unauthorized/dead menu leaked: '.$forbidden);
 
         $context['base_url']='/seotrack';
@@ -43,7 +43,7 @@ final class AdminLteUiTest extends TestCase
     public function testApplicationStylesCoverResponsiveRtlAndReducedMotion(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 2).'/public/assets/phase27.css');
-        foreach (['font-family:IRANSans','local("IRANSansX")','color-scheme:light','html[dir=rtl]','html,body{max-width:100%;overflow-x:hidden;color','width:min(calc(100% - 2rem),560px)','.app-main{width:auto;max-width:none','.seo-table-responsive','--bs-table-bg:#fff','.rank-job-wait','@media(max-width:991.98px)','@media(max-width:575.98px)','prefers-reduced-motion','.rank-chart','.table-scroll','.installer-choice-grid'] as $required) $this->assertTrue(str_contains($css,$required));
+        foreach (['font-family:IRANSans','local("IRANSansX")','color-scheme:light','html[dir=rtl]','html,body{max-width:100%;overflow-x:hidden;color','width:min(calc(100% - 2rem),560px)','.app-main.card{width:auto;max-width:none!important','.footer-inner','.logbox-output','.seo-table-responsive','--bs-table-bg:#fff','.rank-job-wait','@media(max-width:991.98px)','@media(max-width:575.98px)','prefers-reduced-motion','.rank-chart','.table-scroll','.installer-choice-grid'] as $required) $this->assertTrue(str_contains($css,$required));
     }
 
     public function testCdnAndInlineAssetsHaveStrictCspCoverage(): void

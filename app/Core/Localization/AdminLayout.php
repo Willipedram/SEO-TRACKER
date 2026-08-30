@@ -62,8 +62,8 @@ final class AdminLayout
         $wrapper->appendChild($this->fragment($document, $this->navbar($context, $baseUrl)));
         $wrapper->appendChild($this->fragment($document, $this->sidebar($path, (array)($context['permissions'] ?? []), (array)($context['modules'] ?? []), $baseUrl)));
         $main->parentNode?->removeChild($main); $wrapper->appendChild($main);
-        $footer = $document->createElement('footer'); $footer->setAttribute('class', 'app-footer text-center');
-        $footer->appendChild($document->createTextNode('SEO Tracker · نسخه '.(string)($context['version'] ?? '')));
+        $footer = $document->createElement('footer'); $footer->setAttribute('class', 'app-footer');
+        $footer->appendChild($this->fragment($document, $this->footer((string)($context['version'] ?? ''))));
         $wrapper->appendChild($footer);
 
         $title = $document->getElementsByTagName('h1')->item(0);
@@ -103,6 +103,33 @@ final class AdminLayout
             $links .= '<li class="nav-item"><a class="nav-link'.$active.'" href="'.$baseUrl.$href.'"><i class="nav-icon bi '.$icon.'" aria-hidden="true"></i><p>'.$label.'</p></a></li>';
         }
         return '<aside class="app-sidebar bg-dark shadow" data-bs-theme="dark"><div class="sidebar-brand"><a class="brand-link" href="'.$baseUrl.'/account"><span class="brand-text fw-semibold">SEO Tracker</span></a></div><div class="sidebar-wrapper"><nav class="mt-2" aria-label="منوی اصلی"><ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">'.$links.'</ul></nav></div></aside>';
+    }
+
+    private function footer(string $version): string
+    {
+        $logs = $this->recentLogs();
+        return '<div class="footer-content"><div class="footer-inner"><span>SEO Tracker · نسخه '.htmlspecialchars($version, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'</span><button class="btn btn-outline-primary btn-sm logbox-button" type="button" data-bs-toggle="modal" data-bs-target="#seo-logbox"><i class="bi bi-terminal" aria-hidden="true"></i> لاگ باکس</button></div>'
+            .'<div class="modal fade" id="seo-logbox" tabindex="-1" aria-labelledby="seo-logbox-title" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="seo-logbox-title">لاگ باکس</h2><button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="بستن"></button></div><div class="modal-body"><div class="logbox-toolbar"><p>آخرین رویدادهای ثبت‌شده؛ برای دیدن رویدادهای جدید صفحه را تازه‌سازی کنید.</p><button class="btn btn-primary btn-sm" type="button" data-logbox-copy><i class="bi bi-copy" aria-hidden="true"></i> کپی همه لاگ‌ها</button></div><pre class="logbox-output" dir="ltr" tabindex="0">'.htmlspecialchars($logs, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'</pre></div></div></div></div></div>';
+    }
+
+    private function recentLogs(): string
+    {
+        $sections = [];
+        foreach (['application.log', 'search-console.log'] as $name) {
+            $path = $this->basePath.'/storage/logs/'.$name;
+            if (!is_file($path) || !is_readable($path)) continue;
+            $handle = @fopen($path, 'rb');
+            if ($handle === false) continue;
+            $size = (int) (@filesize($path) ?: 0);
+            $offset = max(0, $size - 65536);
+            if ($offset > 0) fseek($handle, $offset);
+            $contents = stream_get_contents($handle);
+            fclose($handle);
+            if (!is_string($contents)) continue;
+            if ($offset > 0 && ($newline = strpos($contents, "\n")) !== false) $contents = substr($contents, $newline + 1);
+            $sections[] = '=== '.$name." ===\n".trim($contents);
+        }
+        return $sections === [] ? 'هنوز لاگی ثبت نشده است.' : implode("\n\n", $sections);
     }
 
     private function components(DOMDocument $document): void
