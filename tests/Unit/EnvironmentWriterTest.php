@@ -27,4 +27,22 @@ final class EnvironmentWriterTest extends TestCase
         }
         unlink($path);
     }
+
+    public function testExplicitUpdateReplacesDatabaseValuesButPreservesApplicationSecrets(): void
+    {
+        $path=sys_get_temp_dir().'/seo-env-replace-'.bin2hex(random_bytes(4));
+        file_put_contents($path,"APP_KEY=\"base64:keep-this-key\"\nCUSTOM_SETTING=\"keep-me\"\nDB_HOST=\"old-host\"\nDB_DATABASE=\"old_database\"\n"); chmod($path,0600);
+        $writer=new EnvironmentWriter($path);
+        $temporary=$writer->prepare(new DatabaseConfiguration('localhost',3306,'new_database','new_user','new_password'),'https://tracker.example',true,true);
+        $writer->commit($temporary); $content=(string)file_get_contents($path);
+        foreach(['APP_KEY="base64:keep-this-key"','CUSTOM_SETTING="keep-me"','DB_HOST="localhost"','DB_DATABASE="new_database"','DB_USERNAME="new_user"'] as $required)$this->assertTrue(str_contains($content,$required));
+        $this->assertTrue(!str_contains($content,'old_database')); $this->assertSame(0600,fileperms($path)&0777); unlink($path);
+    }
+
+    public function testExplicitCleanInstallMayReplaceStaleConfiguration(): void
+    {
+        $path=sys_get_temp_dir().'/seo-env-clean-'.bin2hex(random_bytes(4)); file_put_contents($path,"APP_KEY=\"stale-key\"\n"); chmod($path,0600);
+        $writer=new EnvironmentWriter($path); $temporary=$writer->prepare(new DatabaseConfiguration('localhost',3306,'clean_database','clean_user','clean_password'),'https://tracker.example',true); $writer->commit($temporary);
+        $content=(string)file_get_contents($path); $this->assertTrue(str_contains($content,'DB_DATABASE="clean_database"')); $this->assertTrue(!str_contains($content,'APP_KEY="stale-key"')); unlink($path);
+    }
 }
