@@ -1,5 +1,46 @@
 # Changelog
 
+## Phase 27 — Persian RTL AdminLTE interface
+
+- Made the persistent installation lock an explicit deployment acknowledgement: a
+  newly extracted source tree without that lock reopens the wizard, where the
+  connected database is classified and the operator chooses clean install or update.
+- Redesigned login typography and field composition, corrected invalid responsive
+  width calculations, constrained page overflow, and wrapped dashboard tables in
+  dedicated horizontal scroll containers instead of letting the viewport overflow.
+- Made the kernel CSP authoritative over stale response-level policies and added a
+  visible policy-version header, preventing the former `connect-src 'self'` value
+  from blocking jsDelivr source-map diagnostics after an application upgrade.
+- Added a first-run installation gate so bookmarked login/application URLs redirect
+  to the wizard until the database installation marker exists, while ignoring a
+  stale lock copied without persistent `.env` configuration.
+- Replaced misleading context-free keyword/rank-dashboard 404 pages with an
+  owner-scoped website selector that carries the required website identifier into
+  the selected workflow.
+- Replaced the earlier AdminLTE 4 release candidate with stable AdminLTE `4.9.1`
+  and upgraded the single Bootstrap runtime to compatible version `5.3.8`; CDN,
+  CSP, markup-contract and regression checks were re-audited for final closure.
+- Redesigned the installer as a responsive four-step, WordPress-inspired wizard and
+  added an explicit database detection decision: empty databases continue to clean
+  installation, existing SEO Tracker databases can enter the safe update workflow,
+  and unknown/existing data is never silently deleted for a clean installation.
+- Changed the database host default to `localhost`, added an explicit clean/update
+  decision even for an empty database, allowed an explicitly confirmed clean install
+  to replace stale `.env`, and preserved existing application secrets during updates.
+- Refined the wizard palette, focus states, cards and responsive spacing, and made the
+  global Persian font stack prefer locally licensed IranSans family names.
+- Applied physical/virtual mount prefixes directly to shared navbar/sidebar links,
+  retained the mount in installer `APP_URL`, prevented double-prefix rewriting, and
+  allowed pinned jsDelivr source-map connections in CSP.
+- Added the shared AdminLTE 4 application shell, standalone login/installer/update
+  layouts, responsive RTL navigation, permission/module-aware menus, and unified
+  Bootstrap-compatible forms, tables, alerts and empty states.
+- Preserved the real server-rendered workflows and Phase 26 terminology tooltips;
+  no AdminLTE demo content, fake metrics, fake notifications or sample credentials
+  are shipped.
+- Pinned and documented the frontend stack, hardened its CSP allowlist, and retained
+  nginx-safe inline delivery for application-owned CSS and tooltip behavior.
+
 All notable changes to SEO Tracker are documented here. The project uses semantic
 application versions and an independently monotonic database schema version.
 

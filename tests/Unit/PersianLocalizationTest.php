@@ -46,7 +46,7 @@ final class PersianLocalizationTest extends TestCase
     {
         $base = dirname(__DIR__, 2); $html = (new UiLocalizer('fa',$base))->html('<!doctype html><html><head></head><body><table><tr><th>Position</th></tr></table></body></html>');
         $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        foreach (['رتبه ثبت‌شده توسط ردیاب','Rank Tracker Position','class="term-trigger"','aria-describedby=','aria-expanded="false"','role="tooltip"','dir="ltr"','/assets/tooltips.js'] as $required) $this->assertTrue(str_contains($decoded,$required));
+        foreach (['رتبه ثبت‌شده توسط ردیاب','Rank Tracker Position','class="term-trigger"','aria-describedby=','aria-expanded="false"','role="tooltip"','dir="ltr"','document.addEventListener'] as $required) $this->assertTrue(str_contains($decoded,$required));
         $css=(string)file_get_contents($base.'/public/assets/installer.css'); $js=(string)file_get_contents($base.'/public/assets/tooltips.js');
         foreach ([':hover',':focus-within','aria-expanded="true"','max-width: min(280px, 80vw)'] as $required) $this->assertTrue(str_contains($css,$required));
         foreach (['click','aria-expanded','Escape'] as $required) $this->assertTrue(str_contains($js,$required));

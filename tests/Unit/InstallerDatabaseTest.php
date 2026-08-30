@@ -58,11 +58,17 @@ final class InstallerDatabaseTest extends TestCase
     public function testRepeatedInstallerAccessIsHidden(): void
     {
         $path = sys_get_temp_dir() . '/seo-installed-' . bin2hex(random_bytes(4)) . '.sqlite';
+        $base = sys_get_temp_dir() . '/seo-install-lock-' . bin2hex(random_bytes(4));
+        mkdir($base . '/storage', 0750, true);
         $pdo = new PDO('sqlite:' . $path);
         (new SchemaInstaller())->install($pdo, 'Admin', 'admin@example.com', 'correct-horse-battery', 'SEO Tracker');
         $config = new Config(['database' => ['default' => 'sqlite', 'connections' => ['sqlite' => ['driver' => 'sqlite', 'database' => $path]]]]);
-        $response = (new InstallerController(dirname(__DIR__, 2), $config))->show(new Request('GET', '/install'));
+        $controller = new InstallerController($base, $config);
+        $this->assertTrue($controller->show(new Request('GET', '/install'))->status !== 404, 'A replaced source tree without its lock must reopen database detection.');
+        file_put_contents($base . '/storage/installed.lock', SchemaInstaller::APPLICATION_ID . PHP_EOL);
+        $response = $controller->show(new Request('GET', '/install'));
         unlink($path);
+        unlink($base . '/storage/installed.lock'); rmdir($base . '/storage'); rmdir($base);
         $this->assertSame(404, $response->status);
     }
 

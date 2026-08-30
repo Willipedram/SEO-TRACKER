@@ -52,7 +52,11 @@ final class AuthController
             if ($user === null) {
                 return Response::redirect('/login', 302);
             }
-            return $this->page('Account', '<p>Signed in as <strong>' . Html::escape((string) $user['name']) . '</strong> (' . Html::escape((string) $user['email']) . ').</p><form method="post" action="/logout">' . $this->csrf() . '<button type="submit">Sign out</button></form>');
+            $summary=$this->factory->dashboard((int)$user['id']);
+            $cards=''; foreach(['websites'=>'Websites','keywords'=>'Keywords','improved'=>'Improved keywords','dropped'=>'Dropped keywords','top10'=>'Top 10','top3'=>'Top 3','first'=>'Rank #1'] as $key=>$label)$cards.='<article class="info-box"><div class="info-box-content"><span class="info-box-text">'.$label.'</span><span class="info-box-number">'.(int)$summary[$key].'</span></div></article>';
+            $empty=$summary['websites']===0?'<div class="empty-state"><p>No websites have been added yet.</p><a class="btn btn-primary" href="/websites/create">Add the first website</a></div>':'';
+            $last=$summary['last_check']===null?'Not run yet':Html::escape((string)$summary['last_check']);
+            return $this->page('Account', '<p>Signed in as <strong>' . Html::escape((string) $user['name']) . '</strong> (' . Html::escape((string) $user['email']) . ').</p><section class="dashboard-grid" aria-label="Real rank tracking metrics">'.$cards.'</section>'.$empty.'<p>Last rank check: <span dir="ltr">'.$last.'</span></p><form method="post" action="/logout">' . $this->csrf() . '<button type="submit">Sign out</button></form>');
         } catch (Throwable) {
             return Response::json(['error' => 'Authentication is unavailable.'], 503);
         }
@@ -71,12 +75,12 @@ final class AuthController
     private function loginForm(?string $error = null): string
     {
         $message = $error === null ? '' : '<p class="error">' . Html::escape($error) . '</p>';
-        return $message . '<form method="post" action="/login">' . $this->csrf() . '<label>Email<input required type="email" name="email" maxlength="254" autocomplete="username"></label><label>Password<input required type="password" name="password" maxlength="1024" autocomplete="current-password"></label><button type="submit">Sign in</button></form>';
+        return '<div class="login-intro"><span class="login-logo" aria-hidden="true">S</span><div><h2>Welcome back</h2><p>Sign in to manage websites, keywords and ranking reports.</p></div></div>' . $message . '<form class="login-form" method="post" action="/login">' . $this->csrf() . '<label>Email<span class="login-input"><i class="bi bi-envelope" aria-hidden="true"></i><input required type="email" name="email" maxlength="254" autocomplete="username"></span></label><label>Password<span class="login-input"><i class="bi bi-lock" aria-hidden="true"></i><input required type="password" name="password" maxlength="1024" autocomplete="current-password"></span></label><button class="login-submit" type="submit">Sign in</button></form>';
     }
 
     private function page(string $title, string $content, int $status = 200): Response
     {
-        return Response::html('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . Html::escape($title) . ' — SEO Tracker</title><link rel="stylesheet" href="/assets/installer.css"></head><body><main class="card"><p><strong>SEO Tracker</strong></p><h1>' . Html::escape($title) . '</h1>' . $content . '</main></body></html>', $status);
+        return Response::html('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . Html::escape($title) . ' — SEO Tracker</title><link rel="stylesheet" href="/assets/installer.css"></head><body><main class="card login-card"><header class="login-product"><strong>SEO Tracker</strong><small>SEO Rank Tracking Platform</small></header><h1 class="visually-hidden">' . Html::escape($title) . '</h1>' . $content . '</main></body></html>', $status);
     }
 
     private function csrf(): string
