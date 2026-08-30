@@ -99,6 +99,10 @@ final class RankDashboardTest extends TestCase
     public function testEmptyHistoryAndPermissions(): void
     {
         [$database, $service, $website, $desktop] = $this->services();
+        $available = $service->websites(1);
+        $this->assertSame(1, count($available));
+        $this->assertSame($website['public_id'], $available[0]['public_id']);
+        $this->assertSame(1, (int) $available[0]['keyword_count']);
         $row = $service->dashboard(1, $website['public_id'], range: 'all')['rows'][0];
         $this->assertSame(null, $row['current_position']);
         $this->assertSame(null, $row['previous_position']);

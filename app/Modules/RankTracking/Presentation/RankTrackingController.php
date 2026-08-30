@@ -60,10 +60,14 @@ final class RankTrackingController
         $translator = $this->factory->translator();
         try {
             [, $auth] = $this->factory->services();
+            $actor = $this->actor($auth);
+            if (!is_string($request->query['website'] ?? null) || $request->query['website'] === '') {
+                return $this->websiteSelection($this->factory->dashboard()->websites($actor), $translator);
+            }
             $website = $this->id($request->query['website'] ?? null, $translator->get('website'));
             $keyword = $request->query['keyword'] ?? null;
             if ($keyword === '') $keyword = null;
-            $model = $this->factory->dashboard()->dashboard($this->actor($auth), $website, is_string($keyword) ? $keyword : null, (string) ($request->query['device'] ?? 'all'), (string) ($request->query['range'] ?? '30'));
+            $model = $this->factory->dashboard()->dashboard($actor, $website, is_string($keyword) ? $keyword : null, (string) ($request->query['device'] ?? 'all'), (string) ($request->query['range'] ?? '30'));
             $filters = '<form class="filters" method="get" action="/rank-dashboard"><input type="hidden" name="website" value="' . Html::escape($website) . '"><label>' . Html::escape($translator->get('keyword')) . '<select name="keyword"><option value="">' . Html::escape($translator->get('all')) . '</option>';
             foreach ($model['keywords'] as $option) $filters .= '<option value="' . Html::escape((string) $option['public_id']) . '"' . ($keyword === $option['public_id'] ? ' selected' : '') . '>' . Html::escape((string) $option['keyword_text'] . ' — ' . $translator->get((string) $option['device'])) . '</option>';
             $filters .= '</select></label><label>' . Html::escape($translator->get('device')) . '<select name="device">' . $this->options(['all', 'desktop', 'mobile'], $model['device'], $translator) . '</select></label><label>' . Html::escape($translator->get('date_range')) . '<select name="range">' . $this->rangeOptions($model['range'], $translator) . '</select></label><button>' . Html::escape($translator->get('apply')) . '</button></form>';
@@ -113,6 +117,20 @@ final class RankTrackingController
     private function headings(Translator $t): string
     {
         return implode('', array_map(static fn (string $key): string => '<th>' . Html::escape($t->get($key)) . '</th>', ['keyword', 'current', 'previous', 'change', 'best', 'worst', 'ranking_url', 'last_checked', 'desktop_position', 'mobile_position', 'actions']));
+    }
+
+    private function websiteSelection(array $websites, Translator $translator): Response
+    {
+        if ($websites === []) {
+            $content = '<div class="empty-state"><h2>' . Html::escape($translator->get('no_websites')) . '</h2><a class="button" href="/websites/create">' . Html::escape($translator->get('add_website')) . '</a></div>';
+            return $this->localizedPage($translator->get('dashboard'), $content, $translator);
+        }
+        $rows = '';
+        foreach ($websites as $website) {
+            $rows .= '<tr><td><strong>' . Html::escape((string) $website['site_name']) . '</strong></td><td class="technical-ltr">' . Html::escape((string) $website['normalized_domain']) . '</td><td>' . (int) $website['keyword_count'] . '</td><td><a class="button" href="/rank-dashboard?website=' . Html::escape((string) $website['public_id']) . '">' . Html::escape($translator->get('open_dashboard')) . '</a></td></tr>';
+        }
+        $content = '<p>' . Html::escape($translator->get('choose_website_help')) . '</p><div class="table-scroll"><table><thead><tr><th>' . Html::escape($translator->get('website')) . '</th><th>' . Html::escape($translator->get('domain')) . '</th><th>' . Html::escape($translator->get('keyword_count')) . '</th><th>' . Html::escape($translator->get('actions')) . '</th></tr></thead><tbody>' . $rows . '</tbody></table></div>';
+        return $this->localizedPage($translator->get('choose_website'), $content, $translator);
     }
 
     private function options(array $values, string $selected, Translator $t): string
