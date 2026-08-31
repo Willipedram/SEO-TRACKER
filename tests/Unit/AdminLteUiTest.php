@@ -38,12 +38,15 @@ final class AdminLteUiTest extends TestCase
         $mounted=(new UiLocalizer('fa',dirname(__DIR__,2)))->html('<!doctype html><html><head><title>Keywords</title></head><body><main><h1>Keywords</h1></main></body></html>','/keywords',$context);
         foreach(['href="/seotrack/account"','href="/seotrack/websites"','href="/seotrack/keywords"','action="/seotrack/logout"'] as $required)$this->assertTrue(str_contains($mounted,$required),'Mount prefix missing: '.$required);
         $this->assertTrue(!str_contains($mounted,'/seotrack/seotrack/'));
+
+        $actions=(new UiLocalizer('fa',dirname(__DIR__,2)))->html('<!doctype html><html><head><title>Websites</title></head><body><main><h1>Websites</h1><p><a class="button" href="/websites/create">Add website</a> <a href="/websites?archived=1">Include archived</a></p></main></body></html>','/websites',$context);
+        $this->assertTrue(str_contains($actions,'class="button btn btn-primary"'), 'Legacy action links must receive button styling.');
     }
 
     public function testApplicationStylesCoverResponsiveRtlAndReducedMotion(): void
     {
         $css = (string) file_get_contents(dirname(__DIR__, 2).'/public/assets/phase27.css');
-        foreach (['font-family:IRANSans','local("IRANSansX")','color-scheme:light','html[dir=rtl]','html,body{max-width:100%;overflow-x:hidden;color','width:min(calc(100% - 2rem),560px)','.app-main.card{width:auto;max-width:none!important','.footer-inner','.logbox-output','.seo-table-responsive','--bs-table-bg:#fff','.rank-job-wait','@media(max-width:991.98px)','@media(max-width:575.98px)','prefers-reduced-motion','.rank-chart','.table-scroll','.installer-choice-grid'] as $required) $this->assertTrue(str_contains($css,$required));
+        foreach (['font-family:IRANSans','local("IRANSansX")','color-scheme:light','html[dir=rtl]','html,body{max-width:100%;overflow-x:hidden;color','width:min(calc(100% - 2rem),560px)','.app-main.card{width:auto;max-width:none!important','.app-header .container-fluid{display:flex;width:100%','.btn,.button{display:inline-flex','.footer-inner{display:flex;width:100%','margin-left:var(--lte-sidebar-width,250px)','transform:translateX(-100%)','.logbox-output','.seo-table-responsive','--bs-table-bg:#fff','.rank-job-wait','@media(max-width:991.98px)','@media(max-width:575.98px)','prefers-reduced-motion','.rank-chart','.table-scroll','.installer-choice-grid'] as $required) $this->assertTrue(str_contains($css,$required));
     }
 
     public function testCdnAndInlineAssetsHaveStrictCspCoverage(): void
@@ -74,5 +77,25 @@ final class AdminLteUiTest extends TestCase
         $paths=[dirname(__DIR__,2).'/app',dirname(__DIR__,2).'/routes',dirname(__DIR__,2).'/public'];
         $source=''; foreach($paths as $path){$iterator=new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path,\FilesystemIterator::SKIP_DOTS));foreach($iterator as $file)if($file->isFile())$source.=(string)file_get_contents($file->getPathname());}
         foreach (['href="#"','javascript:void(0)','Alexander Pierce','demo@example.com','admin-lte@latest','admin-lte@4.0.0-rc4'] as $forbidden) $this->assertTrue(!str_contains($source,$forbidden),'Forbidden UI source found: '.$forbidden);
+    }
+
+    public function testUserIpRankRunnerHasModalAndIncognitoExtensionContracts(): void
+    {
+        $base=dirname(__DIR__,2);
+        $javascript=(string)file_get_contents($base.'/public/assets/manual-rank.js');
+        foreach(['SEO_RANK_START','SEO_RANK_PROGRESS','SEO_RANK_DONE','/rank-checks/manual','crypto.randomUUID()'] as $required)$this->assertTrue(str_contains($javascript,$required));
+        $manifest=json_decode((string)file_get_contents($base.'/browser-extension/manifest.json'),true,512,JSON_THROW_ON_ERROR);
+        $this->assertSame(3,$manifest['manifest_version']);
+        $this->assertSame('spanning',$manifest['incognito']);
+        $this->assertTrue(in_array('https://*/*',$manifest['optional_host_permissions'],true));
+        $this->assertTrue(!str_contains(json_encode($manifest,JSON_THROW_ON_ERROR),'pnakhostin.com'));
+        $worker=(string)file_get_contents($base.'/browser-extension/worker.js');
+        foreach(['incognito:true','pws=0','page<10','chrome.scripting.executeScript','SEO_RANK_DONE','chrome.tabs.get','sender.tab?.id','searchParams.set','PAGE_TIMEOUT','INSPECT_FAILED','attempt<3'] as $required)$this->assertTrue(str_contains($worker,$required));
+        $this->assertTrue(!str_contains($worker,'pnakhostin.com'));
+        $popup=(string)file_get_contents($base.'/browser-extension/popup.js');
+        foreach(['chrome.permissions.request','registerContentScripts','chrome.tabs.reload'] as $required)$this->assertTrue(str_contains($popup,$required));
+        $this->assertTrue(str_contains((string)file_get_contents($base.'/browser-extension/popup.html'),'logo.svg'));
+        $iterator=new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base.'/browser-extension',\FilesystemIterator::SKIP_DOTS));
+        foreach($iterator as $file)$this->assertTrue(!in_array(strtolower($file->getExtension()),['png','jpg','jpeg','gif','webp','ico'],true),'Binary extension asset is forbidden: '.$file->getFilename());
     }
 }
