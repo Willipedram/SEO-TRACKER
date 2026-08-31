@@ -15,6 +15,18 @@ not evidence of external provider behavior.
 
 ## Execution strategy and client/server model
 
+### Manual observation from the user's network
+
+The dashboard always offers **Manual check with my IP**. It opens a fresh Google
+Search URL in the user's browser with personalization disabled (`pws=0`), so the
+search connection originates from that user's current network rather than the web
+server. Browsers do not allow this application to read Google's cross-origin result
+page, so the user confirms the visible position and ranking URL. The server validates
+that the URL belongs to the tracked website and records the observation as
+`execution_source=client`, `adapter_key=manual`; no provider API or queue cron is
+required. This is intentionally not represented as an automated or independently
+verified result.
+
 The PHP application is the control plane. It authenticates and authorizes requests,
 creates immutable check requests, selects an eligible execution source, leases work,
 validates structured results, and persists attempts/results. Executors are adapters:

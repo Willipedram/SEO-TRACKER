@@ -145,6 +145,13 @@ final class AdminLayout
         }
         foreach (['input'=>'form-control','select'=>'form-select','textarea'=>'form-control'] as $tag=>$class) foreach (iterator_to_array($document->getElementsByTagName($tag)) as $element) if ($element instanceof DOMElement && $element->getAttribute('type') !== 'hidden' && $element->getAttribute('type') !== 'checkbox') $element->setAttribute('class', trim($element->getAttribute('class').' '.$class));
         foreach (iterator_to_array($document->getElementsByTagName('button')) as $button) if ($button instanceof DOMElement && !str_contains($button->getAttribute('class'), 'btn')) $button->setAttribute('class', trim($button->getAttribute('class').' btn btn-primary'));
+        foreach (iterator_to_array($document->getElementsByTagName('a')) as $link) {
+            if (!$link instanceof DOMElement) continue;
+            $class = $link->getAttribute('class');
+            if (str_contains($class, 'button') && !str_contains($class, 'btn')) {
+                $link->setAttribute('class', trim($class.' btn btn-primary'));
+            }
+        }
         foreach (iterator_to_array($document->getElementsByTagName('form')) as $form) if ($form instanceof DOMElement) $form->setAttribute('class', trim($form->getAttribute('class').' adminlte-form'));
         foreach (iterator_to_array($document->getElementsByTagName('p')) as $paragraph) if ($paragraph instanceof DOMElement && str_contains($paragraph->getAttribute('class'), 'error')) $paragraph->setAttribute('class', trim($paragraph->getAttribute('class').' alert alert-danger'));
     }

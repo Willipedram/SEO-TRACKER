@@ -20,12 +20,37 @@ final class RankTrackingController
     public function submit(Request $request): Response
     {
         try {
+            $website = $this->id($request->body['website'] ?? null, 'Website');
+            $keyword = $this->id($request->body['keyword'] ?? null, 'Keyword');
             [$manager, $auth] = $this->factory->services();
-            $id = $manager->submit($this->actor($auth), $this->id($request->body['website'] ?? null, 'Website'), $this->id($request->body['keyword'] ?? null, 'Keyword'));
+            $actor = $this->actor($auth);
+            // A stale page or direct POST must not turn a known configuration state
+            // into a browser-visible 422.  The dashboard is the authoritative place
+            // for execution availability and explains how to enable an adapter.
+            if (!$this->factory->executionAvailable()) {
+                return Response::redirect('/rank-dashboard?website=' . rawurlencode($website) . '&keyword=' . rawurlencode($keyword));
+            }
+            $id = $manager->submit($actor, $website, $keyword);
             return Response::redirect('/rank-checks/status?id=' . $id);
         } catch (AuthorizationException $exception) { return $this->error($exception->getMessage(), 403); }
         catch (InvalidArgumentException $exception) { return $this->error($exception->getMessage(), 422); }
         catch (Throwable) { return $this->error('Rank check could not be submitted.', 503); }
+    }
+
+    public function recordManual(Request $request): Response
+    {
+        try {
+            [$manager, $auth] = $this->factory->services();
+            $website = $this->id($request->body['website'] ?? null, 'Website');
+            $keyword = $this->id($request->body['keyword'] ?? null, 'Keyword');
+            $position = filter_var($request->body['position'] ?? null, FILTER_VALIDATE_INT);
+            $url = trim(is_string($request->body['ranking_url'] ?? null) ? $request->body['ranking_url'] : '');
+            if ($position === false) throw new InvalidArgumentException('Manual position is invalid.');
+            $manager->recordManual($this->actor($auth), $website, $keyword, $position, $url);
+            return Response::redirect('/rank-dashboard?website=' . rawurlencode($website) . '&keyword=' . rawurlencode($keyword));
+        } catch (AuthorizationException $exception) { return $this->error($exception->getMessage(), 403); }
+        catch (InvalidArgumentException $exception) { return $this->error($exception->getMessage(), 422); }
+        catch (Throwable) { return $this->error('Manual rank could not be recorded.', 503); }
     }
 
     public function status(Request $request): Response
@@ -86,11 +111,13 @@ final class RankTrackingController
                 };
                 $chart = '/rank-dashboard/chart?website=' . $website . '&keyword=' . rawurlencode((string) $row['public_id']) . '&range=' . rawurlencode($model['range']) . '&device=all';
                 $run = $executionAvailable ? '<form class="rank-row-action" method="post" action="/rank-checks"><input type="hidden" name="_token" value="' . Html::escape(\App\Core\Security\Csrf::token()) . '"><input type="hidden" name="website" value="' . Html::escape($website) . '"><input type="hidden" name="keyword" value="' . Html::escape((string) $row['public_id']) . '"><button class="btn btn-sm btn-primary" type="submit">' . Html::escape($translator->get('run_check')) . '</button></form>' : '';
-                $rows .= '<tr><td>' . Html::escape((string) $row['keyword_text']) . '<small>' . Html::escape($translator->get((string) $row['device'])) . '</small></td><td>' . $this->position($row['current_position'], $translator) . '</td><td>' . $this->position($row['previous_position'], $translator) . '</td><td><span class="change ' . Html::escape((string) $row['change_state']) . '">' . Html::escape($change) . '</span></td><td>' . $this->position($row['best_position'], $translator) . '</td><td>' . $this->position($row['worst_position'], $translator) . '</td><td class="url-cell">' . ($row['ranking_url'] === null ? '—' : Html::escape((string) $row['ranking_url'])) . '</td><td>' . ($row['last_checked'] === null ? '—' : Html::escape((string) $row['last_checked'])) . '</td><td>' . $this->position($row['desktop_position'], $translator) . '</td><td>' . $this->position($row['mobile_position'], $translator) . '</td><td><div class="rank-actions"><a class="btn btn-sm btn-outline-primary" href="' . Html::escape($chart) . '">' . Html::escape($translator->get('view_chart')) . '</a>' . $run . '</div></td></tr>';
+                $google = 'https://www.google.com/search?' . http_build_query(['q'=>$row['keyword_text'],'gl'=>strtolower((string)$row['country_code']),'hl'=>strtolower((string)$row['language_code']),'num'=>100,'pws'=>0], '', '&', PHP_QUERY_RFC3986);
+                $manual = '<details class="manual-rank"><summary class="btn btn-sm btn-primary">بررسی دستی با IP من</summary><div class="manual-rank-panel"><a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener noreferrer" href="' . Html::escape($google) . '">۱. جستجو در Google</a><form method="post" action="/rank-checks/manual"><input type="hidden" name="_token" value="' . Html::escape(\App\Core\Security\Csrf::token()) . '"><input type="hidden" name="website" value="' . Html::escape($website) . '"><input type="hidden" name="keyword" value="' . Html::escape((string)$row['public_id']) . '"><label>۲. رتبه مشاهده‌شده<input required type="number" min="1" max="100" name="position"></label><label>آدرس نتیجه<input required type="url" name="ranking_url" placeholder="https://example.com/page"></label><button class="btn btn-sm btn-primary" type="submit">ثبت رتبه</button></form></div></details>';
+                $rows .= '<tr><td>' . Html::escape((string) $row['keyword_text']) . '<small>' . Html::escape($translator->get((string) $row['device'])) . '</small></td><td>' . $this->position($row['current_position'], $translator) . '</td><td>' . $this->position($row['previous_position'], $translator) . '</td><td><span class="change ' . Html::escape((string) $row['change_state']) . '">' . Html::escape($change) . '</span></td><td>' . $this->position($row['best_position'], $translator) . '</td><td>' . $this->position($row['worst_position'], $translator) . '</td><td class="url-cell">' . ($row['ranking_url'] === null ? '—' : Html::escape((string) $row['ranking_url'])) . '</td><td>' . ($row['last_checked'] === null ? '—' : Html::escape((string) $row['last_checked'])) . '</td><td>' . $this->position($row['desktop_position'], $translator) . '</td><td>' . $this->position($row['mobile_position'], $translator) . '</td><td><div class="rank-actions"><a class="btn btn-sm btn-outline-primary" href="' . Html::escape($chart) . '">' . Html::escape($translator->get('view_chart')) . '</a>' . $run . $manual . '</div></td></tr>';
             }
             $empty = !$hasHistory ? '<p class="empty-state">' . Html::escape($translator->get('no_history')) . '</p>' : '';
             $table = '<div class="table-scroll"><table><thead><tr>' . $this->headings($translator) . '</tr></thead><tbody>' . $rows . '</tbody></table></div>';
-            $configuration = $executionAvailable ? '' : '<div class="alert alert-warning rank-configuration-warning"><strong>' . Html::escape($translator->get('execution_unavailable')) . '</strong><p>' . Html::escape($translator->get('execution_help')) . '</p></div>';
+            $configuration = $executionAvailable ? '' : '<div class="alert alert-info rank-configuration-warning"><strong>ردیابی دستی فعال است.</strong><p>دکمه «بررسی دستی با IP من» جستجو را در مرورگر شما باز می‌کند. سپس رتبه و آدرس نتیجه مشاهده‌شده را ثبت کنید.</p></div>';
             return $this->localizedPage($translator->get('dashboard') . ' — ' . $model['website']['site_name'], $configuration . $filters . $empty . $table, $translator);
         } catch (AuthorizationException) { return $this->localizedPage($translator->get('access_denied'), '<p class="error">' . Html::escape($translator->get('access_denied')) . '</p>', $translator, 403); }
         catch (InvalidArgumentException) { return $this->localizedPage($translator->get('not_found'), '<p class="error">' . Html::escape($translator->get('not_found')) . '</p>', $translator, 404); }
