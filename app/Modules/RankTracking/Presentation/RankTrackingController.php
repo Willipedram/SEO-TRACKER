@@ -20,8 +20,17 @@ final class RankTrackingController
     public function submit(Request $request): Response
     {
         try {
+            $website = $this->id($request->body['website'] ?? null, 'Website');
+            $keyword = $this->id($request->body['keyword'] ?? null, 'Keyword');
             [$manager, $auth] = $this->factory->services();
-            $id = $manager->submit($this->actor($auth), $this->id($request->body['website'] ?? null, 'Website'), $this->id($request->body['keyword'] ?? null, 'Keyword'));
+            $actor = $this->actor($auth);
+            // A stale page or direct POST must not turn a known configuration state
+            // into a browser-visible 422.  The dashboard is the authoritative place
+            // for execution availability and explains how to enable an adapter.
+            if (!$this->factory->executionAvailable()) {
+                return Response::redirect('/rank-dashboard?website=' . rawurlencode($website) . '&keyword=' . rawurlencode($keyword));
+            }
+            $id = $manager->submit($actor, $website, $keyword);
             return Response::redirect('/rank-checks/status?id=' . $id);
         } catch (AuthorizationException $exception) { return $this->error($exception->getMessage(), 403); }
         catch (InvalidArgumentException $exception) { return $this->error($exception->getMessage(), 422); }

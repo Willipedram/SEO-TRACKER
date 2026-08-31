@@ -37,7 +37,7 @@ final class KeywordEndpointTest extends TestCase
         $authorization = new Authorization($database);
         $audit = new AuditRecorder($database);
         $website = (new WebsiteManager($database, $authorization, $audit))->create(1, WebsiteInput::from('Site', 'https://example.com', ''));
-        (new KeywordManager($database, $authorization, $audit))->create(1, $website, KeywordInput::from(['keyword' => '<script>safe</script>', 'search_engine' => 'google', 'country' => 'US', 'language' => 'en', 'device' => 'desktop', 'active' => true], ['google', 'bing'], ['desktop', 'mobile'], ['US']));
+        $keyword = (new KeywordManager($database, $authorization, $audit))->create(1, $website, KeywordInput::from(['keyword' => '<script>safe</script>', 'search_engine' => 'google', 'country' => 'US', 'language' => 'en', 'device' => 'desktop', 'active' => true], ['google', 'bing'], ['desktop', 'mobile'], ['US']));
         $_SESSION['auth'] = ['user_id' => 1, 'authenticated_at' => time(), 'last_activity' => time()];
         $config = new Config([
             'app' => ['key' => 'test-key', 'locale' => 'fa', 'rtl_locales' => ['fa']], 'auth' => [], 'keywords' => ['search_engines' => ['google', 'bing'], 'devices' => ['desktop', 'mobile'], 'countries' => ['US']],
@@ -54,11 +54,18 @@ final class KeywordEndpointTest extends TestCase
         $this->assertSame(200, $response->status);
         $this->assertTrue(str_contains($response->body, '&lt;script&gt;safe&lt;/script&gt;'));
         $this->assertTrue(!str_contains($response->body, '<script>safe</script>'));
-        $rankSelection = (new RankTrackingController(new RankTrackingFactory($base, $config)))->dashboard(new Request('GET', '/rank-dashboard'));
+        $edit = $controller->editForm(new Request('GET', '/keywords/edit', ['website' => $website, 'id' => $keyword]));
+        $this->assertTrue(str_contains($edit->body, '/rank-dashboard?website=' . $website . '&keyword=' . $keyword));
+        $this->assertTrue(!str_contains($edit->body, 'action="/rank-checks"'));
+        $rankController = new RankTrackingController(new RankTrackingFactory($base, $config));
+        $unavailableSubmission = $rankController->submit(new Request('POST', '/rank-checks', body: ['website' => $website, 'keyword' => $keyword]));
+        $this->assertSame(303, $unavailableSubmission->status);
+        $this->assertSame('/rank-dashboard?website=' . $website . '&keyword=' . $keyword, $unavailableSubmission->headers['Location']);
+        $rankSelection = $rankController->dashboard(new Request('GET', '/rank-dashboard'));
         $this->assertSame(200, $rankSelection->status);
         $this->assertTrue(str_contains($rankSelection->body, 'انتخاب وب‌سایت'));
         $this->assertTrue(str_contains($rankSelection->body, '/rank-dashboard?website=' . $website));
-        $rankDashboard = (new RankTrackingController(new RankTrackingFactory($base, $config)))->dashboard(new Request('GET', '/rank-dashboard', ['website'=>$website]));
+        $rankDashboard = $rankController->dashboard(new Request('GET', '/rank-dashboard', ['website'=>$website]));
         $this->assertSame(200, $rankDashboard->status);
         $this->assertTrue(str_contains($rankDashboard->body, 'موتور اجرای ردیابی رتبه پیکربندی نشده است.'));
         $this->assertTrue(!str_contains($rankDashboard->body, 'action="/rank-checks"'));
