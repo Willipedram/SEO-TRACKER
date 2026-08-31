@@ -166,5 +166,11 @@ final class UiLocalizer
             $script->appendChild($document->createTextNode($logbox));
             $head->appendChild($script);
         }
+        $rankManual = @file_get_contents($this->basePath . '/public/assets/manual-rank.js');
+        if (is_string($rankManual)) {
+            $script = $document->createElement('script');
+            $script->appendChild($document->createTextNode($rankManual));
+            $head->appendChild($script);
+        }
     }
 }

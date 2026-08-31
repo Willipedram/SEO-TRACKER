@@ -36,6 +36,30 @@ final class RankCheckManager
         return $publicId;
     }
 
+    public function recordManual(int $actorId, string $websitePublicId, string $keywordPublicId, int $position, string $rankingUrl): string
+    {
+        $this->authorization->require($actorId, 'rank_tracking.run');
+        if ($position < 1 || $position > 100) throw new InvalidArgumentException('Manual position must be between 1 and 100.');
+        $keyword = $this->keyword($actorId, $websitePublicId, $keywordPublicId);
+        if ((int) $keyword['active'] !== 1 || $keyword['website_status'] === 'archived') throw new InvalidArgumentException('Only active keywords on active websites can be recorded.');
+        if (filter_var($rankingUrl, FILTER_VALIDATE_URL) === false || !in_array(strtolower((string) parse_url($rankingUrl, PHP_URL_SCHEME)), ['http', 'https'], true)) throw new InvalidArgumentException('A valid ranking URL is required.');
+        $expectedHost = $this->host((string) $keyword['target_url']);
+        $actualHost = $this->host($rankingUrl);
+        if ($expectedHost === null || ($actualHost !== $expectedHost && ($actualHost === null || !str_ends_with($actualHost, '.'.$expectedHost)))) throw new InvalidArgumentException('Ranking URL must belong to the tracked website.');
+
+        $requestPublic = bin2hex(random_bytes(16)); $attemptPublic = bin2hex(random_bytes(16)); $resultPublic = bin2hex(random_bytes(16));
+        $now = gmdate('Y-m-d H:i:s'); $lease = hash('sha256', random_bytes(32));
+        $this->database->transaction(function (Database $database) use ($actorId, $keyword, $position, $rankingUrl, $requestPublic, $attemptPublic, $resultPublic, $now, $lease): void {
+            $database->execute("INSERT INTO rank_check_requests (public_id,user_id,website_id,keyword_id,keyword_text,target_url,search_engine,country_code,language_code,requested_device,execution_source,adapter_key,status,attempt_count,available_at,created_at,started_at,completed_at,error_code,error_detail) VALUES (:public,:user,:website,:keyword,:text,:target,:engine,:country,:language,:device,'client','manual','completed',1,:at,:at,:at,:at,NULL,NULL)", ['public'=>$requestPublic,'user'=>$actorId,'website'=>$keyword['website_id'],'keyword'=>$keyword['id'],'text'=>$keyword['keyword_text'],'target'=>$keyword['target_url'],'engine'=>$keyword['search_engine'],'country'=>$keyword['country_code'],'language'=>$keyword['language_code'],'device'=>$keyword['device'],'at'=>$now]);
+            $requestId = (int) ($database->fetchOne('SELECT id FROM rank_check_requests WHERE public_id=:public', ['public'=>$requestPublic])['id'] ?? 0);
+            $database->execute("INSERT INTO rank_execution_attempts (public_id,request_id,attempt_number,execution_source,adapter_key,adapter_version,requested_device,execution_device,user_agent_profile,network_context,status,leased_by,lease_token_hash,lease_expires_at,started_at,completed_at,error_code,error_detail,retryable) VALUES (:public,:request,1,'client','manual','1.0.0',:device,:execution,'user-browser:manual','user_observed','succeeded','manual-entry',:lease,:at,:at,:at,NULL,NULL,0)", ['public'=>$attemptPublic,'request'=>$requestId,'device'=>$keyword['device'],'execution'=>'manual_'.$keyword['device'],'lease'=>$lease,'at'=>$now]);
+            $attemptId = (int) ($database->fetchOne('SELECT id FROM rank_execution_attempts WHERE public_id=:public', ['public'=>$attemptPublic])['id'] ?? 0);
+            $database->execute("INSERT INTO rank_results (public_id,request_id,attempt_id,website_id,keyword_id,result_type,position,ranking_url,checked_depth,search_engine,country_code,language_code,requested_device,execution_device,execution_source,adapter_key,adapter_version,observed_at,created_at) VALUES (:public,:request,:attempt,:website,:keyword,'ranked',:position,:url,100,:engine,:country,:language,:device,:execution,'client','manual','1.0.0',:at,:at)", ['public'=>$resultPublic,'request'=>$requestId,'attempt'=>$attemptId,'website'=>$keyword['website_id'],'keyword'=>$keyword['id'],'position'=>$position,'url'=>$rankingUrl,'engine'=>$keyword['search_engine'],'country'=>$keyword['country_code'],'language'=>$keyword['language_code'],'device'=>$keyword['device'],'execution'=>'manual_'.$keyword['device'],'at'=>$now]);
+            $this->audit->record($actorId, 'rank_check.manual_recorded', 'rank_check', $requestPublic, ['position'=>$position,'device'=>$keyword['device']]);
+        });
+        return $requestPublic;
+    }
+
     public function status(int $actorId, string $requestId): array
     {
         $this->authorization->require($actorId, 'rank_tracking.view');
@@ -56,8 +80,14 @@ final class RankCheckManager
     private function keyword(int $actorId, string $websitePublicId, string $keywordPublicId): array
     {
         if (!preg_match('/^[a-f0-9]{32}$/', $websitePublicId) || !preg_match('/^[a-f0-9]{32}$/', $keywordPublicId)) throw new InvalidArgumentException('Keyword not found.');
-        $row = $this->database->fetchOne('SELECT keywords.*, websites.id AS website_id, websites.status AS website_status FROM keywords JOIN websites ON websites.id = keywords.website_id WHERE keywords.public_id = :keyword AND websites.public_id = :website AND websites.owner_user_id = :owner', ['keyword' => $keywordPublicId, 'website' => $websitePublicId, 'owner' => $actorId]);
+        $row = $this->database->fetchOne('SELECT keywords.*, COALESCE(keywords.target_url, websites.canonical_url) AS target_url, websites.id AS website_id, websites.status AS website_status FROM keywords JOIN websites ON websites.id = keywords.website_id WHERE keywords.public_id = :keyword AND websites.public_id = :website AND websites.owner_user_id = :owner', ['keyword' => $keywordPublicId, 'website' => $websitePublicId, 'owner' => $actorId]);
         if ($row === null) throw new InvalidArgumentException('Keyword not found.');
         return $row;
+    }
+
+    private function host(string $url): ?string
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+        return is_string($host) && $host !== '' ? strtolower(preg_replace('/^www\./i', '', rtrim($host, '.')) ?? $host) : null;
     }
 }
