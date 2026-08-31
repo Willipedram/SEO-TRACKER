@@ -83,14 +83,18 @@ final class AdminLteUiTest extends TestCase
     {
         $base=dirname(__DIR__,2);
         $javascript=(string)file_get_contents($base.'/public/assets/manual-rank.js');
-        foreach(['SEO_RANK_START','SEO_RANK_PROGRESS','SEO_RANK_DONE','/rank-checks/manual','crypto.randomUUID()'] as $required)$this->assertTrue(str_contains($javascript,$required));
+        foreach(['SEO_RANK_START','SEO_RANK_ACK','SEO_RANK_PROGRESS','SEO_RANK_DONE','/rank-checks/manual','crypto.randomUUID()','PAGE_START','SAVE_RESPONSE','data-manual-rank-debug'] as $required)$this->assertTrue(str_contains($javascript,$required));
+        $this->assertTrue(preg_match('/[^\x00-\x7F]/',$javascript)!==1,'Inline rank runner must remain ASCII so DOMDocument cannot turn Persian script strings into visible numeric entities.');
+        $localized=(new UiLocalizer('fa',$base))->html('<!doctype html><html><head><title>Rank</title></head><body><main><h1>Rank</h1></main></body></html>','/login');
+        $this->assertTrue(!str_contains($localized,'&amp;#1575;'));
+        $this->assertTrue(str_contains($localized,'\\u062f\\u0631'));
         $manifest=json_decode((string)file_get_contents($base.'/browser-extension/manifest.json'),true,512,JSON_THROW_ON_ERROR);
         $this->assertSame(3,$manifest['manifest_version']);
         $this->assertSame('spanning',$manifest['incognito']);
         $this->assertTrue(in_array('https://*/*',$manifest['optional_host_permissions'],true));
         $this->assertTrue(!str_contains(json_encode($manifest,JSON_THROW_ON_ERROR),'pnakhostin.com'));
         $worker=(string)file_get_contents($base.'/browser-extension/worker.js');
-        foreach(['incognito:true','pws=0','page<10','chrome.scripting.executeScript','SEO_RANK_DONE','chrome.tabs.get','sender.tab?.id','searchParams.set','PAGE_TIMEOUT','INSPECT_FAILED','attempt<3'] as $required)$this->assertTrue(str_contains($worker,$required));
+        foreach(['incognito:true','pws=0','page<10','chrome.scripting.executeScript','SEO_RANK_DONE','chrome.tabs.get','sender.tab?.id','searchParams.set','PAGE_TIMEOUT','INSPECT_FAILED','attempt<3','WINDOW_CREATED','PAGE_LOADED','INSPECTED','RUN_FAILED'] as $required)$this->assertTrue(str_contains($worker,$required));
         $this->assertTrue(!str_contains($worker,'pnakhostin.com'));
         $popup=(string)file_get_contents($base.'/browser-extension/popup.js');
         foreach(['chrome.permissions.request','registerContentScripts','chrome.tabs.reload'] as $required)$this->assertTrue(str_contains($popup,$required));

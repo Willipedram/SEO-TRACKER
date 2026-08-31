@@ -26,6 +26,12 @@ verifies the expected `start` offset. Result inspection also retries transient f
 replacement errors three times. This prevents a false stop after page one when
 Chromium resolves navigation before the new result document is ready.
 
+The modal contains an expandable diagnostic log with copy support. It records the
+page-to-extension handshake, Incognito window/tab creation, each navigation offset,
+loaded page, extracted organic-link count, match, server save response, and a stable
+failure code. Persian strings in the inline page asset use ASCII Unicode escapes so
+PHP DOM serialization cannot expose numeric HTML entities as unreadable text.
+
 The manifest uses Chromium's `spanning` Incognito mode intentionally: the dashboard
 tab remains in the normal profile while the same background worker controls the
 temporary Incognito search window. `split` mode would isolate those two contexts and
