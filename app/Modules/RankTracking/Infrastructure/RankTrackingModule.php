@@ -18,6 +18,7 @@ final class RankTrackingModule implements Module
         if ($context === null) throw new RuntimeException('Rank Tracking requires application context.');
         $controller = new RankTrackingController(new RankTrackingFactory($context->basePath, $context->config));
         $router->post('/rank-checks', static fn ($request): Response => $controller->submit($request));
+        $router->post('/rank-checks/manual', static fn ($request): Response => $controller->recordManual($request));
         $router->get('/rank-checks/status', static fn ($request): Response => $controller->status($request));
         $router->get('/rank-checks/history', static fn ($request): Response => $controller->history($request));
         $router->get('/rank-dashboard', static fn ($request): Response => $controller->dashboard($request));
