@@ -94,7 +94,8 @@ final class AdminLteUiTest extends TestCase
         $this->assertTrue(in_array('https://*/*',$manifest['optional_host_permissions'],true));
         $this->assertTrue(!str_contains(json_encode($manifest,JSON_THROW_ON_ERROR),'pnakhostin.com'));
         $worker=(string)file_get_contents($base.'/browser-extension/worker.js');
-        foreach(['incognito:true','pws=0','page<10','chrome.scripting.executeScript','SEO_RANK_DONE','chrome.tabs.get','sender.tab?.id','searchParams.set','PAGE_TIMEOUT','INSPECT_FAILED','attempt<3','WINDOW_CREATED','PAGE_LOADED','INSPECTED','RUN_FAILED'] as $required)$this->assertTrue(str_contains($worker,$required));
+        foreach(['incognito:true','pws=0','page<10','chrome.scripting.executeScript','SEO_RANK_DONE','sender.tab?.id','searchParams.set','waitForGoogle','document.readyState','DOCUMENT_TIMEOUT','INSPECT_FAILED','attempt<3','WINDOW_CREATED','PAGE_LOADED','INSPECTED','RUN_FAILED'] as $required)$this->assertTrue(str_contains($worker,$required));
+        foreach(['chrome.tabs.onUpdated','Google timeout','PAGE_TIMEOUT'] as $forbidden)$this->assertTrue(!str_contains($worker,$forbidden));
         $this->assertTrue(!str_contains($worker,'pnakhostin.com'));
         $popup=(string)file_get_contents($base.'/browser-extension/popup.js');
         foreach(['chrome.permissions.request','registerContentScripts','chrome.tabs.reload'] as $required)$this->assertTrue(str_contains($popup,$required));

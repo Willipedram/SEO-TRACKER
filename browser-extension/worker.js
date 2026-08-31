@@ -1,15 +1,18 @@
 const notify = (tabId, message) => chrome.tabs.sendMessage(tabId, {source:'seo-tracker-extension',...message}).catch(()=>{});
-const loaded = async tabId => {
-  const current=await chrome.tabs.get(tabId); if(current.status==='complete') return;
-  return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{chrome.tabs.onUpdated.removeListener(listener);reject(new Error('Google timeout'));},25000);const listener=(id,info)=>{if(id===tabId&&info.status==='complete'){clearTimeout(timer);chrome.tabs.onUpdated.removeListener(listener);resolve();}};chrome.tabs.onUpdated.addListener(listener);});
+const sleep = milliseconds => new Promise(resolve=>setTimeout(resolve,milliseconds));
+const waitForGoogle = async (tabId,expectedStart='0') => {
+  const deadline=Date.now()+30000;
+  while(Date.now()<deadline){
+    try{
+      const state=await chrome.scripting.executeScript({target:{tabId},func:()=>({ready:document.readyState,url:location.href,start:new URL(location.href).searchParams.get('start')||'0'})});
+      const page=state[0]?.result;
+      if(page&&['interactive','complete'].includes(page.ready)&&page.url.startsWith('https://www.google.')&&page.start===expectedStart)return page;
+    }catch(error){/* The main frame is temporarily unavailable while navigating. */}
+    await sleep(250);
+  }
+  throw new Error('DOCUMENT_TIMEOUT');
 };
-const navigate = (tabId,url) => new Promise((resolve,reject) => {
-  const expected=new URL(url).searchParams.get('start')||'0';
-  const timer=setTimeout(()=>{chrome.tabs.onUpdated.removeListener(listener);reject(new Error('PAGE_TIMEOUT'));},25000);
-  const listener=(id,info,tab)=>{if(id!==tabId||info.status!=='complete')return;const actual=new URL(tab.url).searchParams.get('start')||'0';if(actual!==expected)return;clearTimeout(timer);chrome.tabs.onUpdated.removeListener(listener);resolve();};
-  chrome.tabs.onUpdated.addListener(listener);
-  chrome.tabs.update(tabId,{url}).catch(error=>{clearTimeout(timer);chrome.tabs.onUpdated.removeListener(listener);reject(error);});
-});
+const navigate = async (tabId,url) => { const expected=new URL(url).searchParams.get('start')||'0';await chrome.tabs.update(tabId,{url});return waitForGoogle(tabId,expected); };
 const inspect = async tabId => {
   for(let attempt=0;attempt<3;attempt++){
     try{return await chrome.scripting.executeScript({target:{tabId},func:() => ({captcha:!!document.querySelector('form[action*="sorry"],iframe[src*="recaptcha"],#captcha-form'),links:[...document.querySelectorAll('#search a')].filter(a=>a.querySelector('h3')).map(a=>a.href).filter(href=>/^https?:\/\//.test(href)&&!href.includes('google.'))})}).then(result=>result[0]?.result||{captcha:false,links:[]});}
@@ -26,7 +29,7 @@ chrome.runtime.onMessage.addListener((job, sender, reply) => {
       const win = await chrome.windows.create({url:first,incognito:true,focused:false}); windowId=win.id; const tabId=win.tabs[0].id;
       await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:job.id,progress:6,message:'پنجره ناشناس ایجاد شد؛ در حال بارگذاری Google…',debug:`WINDOW_CREATED window=${windowId} tab=${tabId}`});
       for (let page=0; page<10; page++) {
-        if(page>0){const next=new URL(first);next.searchParams.set('start',String(page*10));await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:job.id,progress:page*10,message:`در حال رفتن به صفحه ${page+1} Google…`,debug:`NAVIGATE page=${page+1} start=${page*10}`});await navigate(tabId,next.toString());}else await loaded(tabId);
+        if(page>0){const next=new URL(first);next.searchParams.set('start',String(page*10));await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:job.id,progress:page*10,message:`در حال رفتن به صفحه ${page+1} Google…`,debug:`NAVIGATE page=${page+1} start=${page*10}`});await navigate(tabId,next.toString());}else await waitForGoogle(tabId,'0');
         await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:job.id,progress:(page+1)*9,message:`در حال بررسی صفحه ${page+1} Google…`,debug:`PAGE_LOADED page=${page+1} start=${page*10}`});
         const result=await inspect(tabId); if(result.captcha) throw new Error('CAPTCHA');
         const links=result.links; const domain=String(job.domain).replace(/^www\./,'').toLowerCase();
@@ -35,7 +38,7 @@ chrome.runtime.onMessage.addListener((job, sender, reply) => {
         if (found >= 0) { await notify(dashboardTabId,{type:'SEO_RANK_DONE',id:job.id,position:page*10+found+1,url:links[found],debug:`MATCH_FOUND page=${page+1} index=${found} position=${page*10+found+1}`}); return; }
       }
       await notify(dashboardTabId,{type:'SEO_RANK_ERROR',id:job.id,message:'دامنه در ۱۰۰ نتیجه نخست پیدا نشد.'});
-    } catch (error) { if(dashboardTabId) await notify(dashboardTabId,{type:'SEO_RANK_ERROR',id:job.id,message:error?.message==='CAPTCHA'?'Google درخواست CAPTCHA کرد؛ پس از رفع آن دوباره تلاش کنید.':error?.message==='PAGE_TIMEOUT'?'بارگذاری صفحه بعدی Google کامل نشد؛ دوباره تلاش کنید.':error?.message==='INSPECT_FAILED'?'افزونه نتوانست نتایج صفحه Google را بخواند؛ دسترسی افزونه را بررسی کنید.':'اجرای جستجو کامل نشد. دسترسی Incognito و اتصال اینترنت را بررسی کنید.',debug:`RUN_FAILED code=${error?.message||'unknown'}`}); }
+    } catch (error) { if(dashboardTabId) await notify(dashboardTabId,{type:'SEO_RANK_ERROR',id:job.id,message:error?.message==='CAPTCHA'?'Google درخواست CAPTCHA کرد؛ پس از رفع آن دوباره تلاش کنید.':error?.message==='DOCUMENT_TIMEOUT'?'سند نتایج Google در دسترس افزونه قرار نگرفت؛ مجوز دسترسی Google و Incognito را بررسی کنید.':error?.message==='INSPECT_FAILED'?'افزونه نتوانست نتایج صفحه Google را بخواند؛ دسترسی افزونه را بررسی کنید.':'اجرای جستجو کامل نشد. دسترسی Incognito و اتصال اینترنت را بررسی کنید.',debug:`RUN_FAILED code=${error?.message||'unknown'}`}); }
     finally { if (windowId) chrome.windows.remove(windowId).catch(()=>{}); }
   })(); reply({accepted:true}); return true;
 });

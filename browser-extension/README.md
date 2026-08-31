@@ -21,10 +21,11 @@ progress only to the tab that started the run, and closes that window. Google ca
 present a CAPTCHA or change its result markup; in that case the run stops with an
 error and no rank is stored.
 
-Page navigation installs its completion listener before changing the Google URL and
-verifies the expected `start` offset. Result inspection also retries transient frame
-replacement errors three times. This prevents a false stop after page one when
-Chromium resolves navigation before the new result document is ready.
+Page readiness is verified by polling the actual Incognito document through
+`chrome.scripting.executeScript`: its URL, `start` offset, and `document.readyState`
+must all match. The runner no longer depends on `tabs.onUpdated`, whose completion
+event can be missing for an Incognito tab even when Google visibly finished loading.
+Result inspection also retries transient frame replacement errors three times.
 
 The modal contains an expandable diagnostic log with copy support. It records the
 page-to-extension handshake, Incognito window/tab creation, each navigation offset,
