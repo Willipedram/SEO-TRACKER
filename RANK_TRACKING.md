@@ -15,6 +15,22 @@ not evidence of external provider behavior.
 
 ## Execution strategy and client/server model
 
+### Manual observation from the user's network
+
+The dashboard always offers **Rank with my IP** through the companion Chromium
+extension in `browser-extension/`. The extension must be installed explicitly and
+enabled for Incognito. On every application domain, the user clicks the extension
+toolbar icon once and grants access only to that exact origin; no source edit or
+rebuild is needed. It opens an unfocused Incognito window with personalization
+disabled (`pws=0`), scans at most the first 100 results, reports progress to the
+dashboard modal, and closes the window. The search connection therefore originates
+from the user's current network rather than the web server. The server validates the
+reported URL belongs to the tracked website and records the observation as
+`execution_source=client`, `adapter_key=manual`; no provider API or queue cron is
+required. Google may show a CAPTCHA or change its markup; the extension reports that
+failure rather than inventing a result. This client result is not independently
+verified by the server.
+
 The PHP application is the control plane. It authenticates and authorizes requests,
 creates immutable check requests, selects an eligible execution source, leases work,
 validates structured results, and persists attempts/results. Executors are adapters:
