@@ -14,6 +14,19 @@ final class RankDashboardService
 
     public function __construct(private readonly Database $database, private readonly Authorization $authorization) {}
 
+    public function websites(int $actorId): array
+    {
+        $this->authorization->require($actorId, 'rank_tracking.view');
+        return $this->database->fetchAll(
+            "SELECT websites.public_id, websites.site_name, websites.normalized_domain, COUNT(keywords.id) AS keyword_count
+             FROM websites LEFT JOIN keywords ON keywords.website_id = websites.id
+             WHERE websites.owner_user_id = :owner AND websites.status <> 'archived'
+             GROUP BY websites.id, websites.public_id, websites.site_name, websites.normalized_domain
+             ORDER BY websites.site_name, websites.id",
+            ['owner' => $actorId],
+        );
+    }
+
     public function dashboard(int $actorId, string $websitePublicId, ?string $keywordPublicId = null, string $device = 'all', string $range = '30'): array
     {
         $this->authorization->require($actorId, 'rank_tracking.view');
@@ -97,7 +110,7 @@ final class RankDashboardService
     private function website(int $actorId, string $publicId): array
     {
         if (!preg_match('/^[a-f0-9]{32}$/', $publicId)) throw new InvalidArgumentException('Website not found.');
-        $website = $this->database->fetchOne('SELECT id, public_id, site_name FROM websites WHERE public_id = :public AND owner_user_id = :owner', ['public' => $publicId, 'owner' => $actorId]);
+        $website = $this->database->fetchOne('SELECT id, public_id, site_name, normalized_domain FROM websites WHERE public_id = :public AND owner_user_id = :owner', ['public' => $publicId, 'owner' => $actorId]);
         if ($website === null) throw new InvalidArgumentException('Website not found.');
         return $website;
     }

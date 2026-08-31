@@ -167,6 +167,23 @@ final class RankTrackingTest extends TestCase
         $this->assertTrue($blocked);
     }
 
+    public function testManualObservationIsRecordedWithoutProviderAdapter(): void
+    {
+        [$database, $manager, , $website, $keyword] = $this->services(new SequenceRankAdapter([]));
+        $request = $manager->recordManual(1, $website, $keyword, 12, 'https://www.example.com/ranking-page');
+        $status = $manager->status(1, $request);
+        $this->assertSame('completed', $status['status']);
+        $this->assertSame('client', $status['execution_source']);
+        $this->assertSame(12, (int) $status['result']['position']);
+        $this->assertSame('manual', $status['result']['adapter_key']);
+        $this->assertSame('https://www.example.com/ranking-page', $status['result']['ranking_url']);
+        $this->assertSame(1, (int) $database->fetchOne("SELECT COUNT(*) AS total FROM audit_logs WHERE action='rank_check.manual_recorded'")['total']);
+
+        $rejected = false;
+        try { $manager->recordManual(1, $website, $keyword, 3, 'https://attacker.example/rank'); } catch (InvalidArgumentException) { $rejected = true; }
+        $this->assertTrue($rejected);
+    }
+
     private function services(RankAdapter $adapter, string $device = 'desktop', int $managerRateLimit = 10): array
     {
         $pdo = new PDO('sqlite::memory:', options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);

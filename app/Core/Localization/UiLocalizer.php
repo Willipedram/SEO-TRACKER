@@ -26,15 +26,15 @@ final class UiLocalizer
         $this->terms = new Terminology($locale, $basePath);
     }
 
-    public function response(Response $response): Response
+    public function response(Response $response, string $path = '/', array $context = []): Response
     {
         $type = strtolower((string) ($response->headers['Content-Type'] ?? ''));
-        if (str_contains($type, 'text/html')) return new Response($this->html($response->body), $response->status, $response->headers);
+        if (str_contains($type, 'text/html')) return new Response($this->html($response->body, $path, $context), $response->status, $response->headers);
         if (str_contains($type, 'application/json')) return new Response($this->json($response->body), $response->status, $response->headers);
         return $response;
     }
 
-    public function html(string $html): string
+    public function html(string $html, string $path = '/', array $context = []): string
     {
         if ($html === '' || $this->locale !== 'fa') return $html;
         $document = new DOMDocument('1.0', 'UTF-8');
@@ -53,6 +53,7 @@ final class UiLocalizer
             $walk($document);
             foreach ($texts as $text) $this->translateText($document, $text);
             $this->directions($document);
+            (new AdminLayout($this->basePath))->apply($document, $path, $context);
             $this->assets($document);
             return str_replace('<?xml encoding="UTF-8">', '', (string) $document->saveHTML());
         } catch (Throwable) {
@@ -133,6 +134,43 @@ final class UiLocalizer
     private function assets(DOMDocument $document): void
     {
         $heads = $document->getElementsByTagName('head'); if ($heads->length < 1) return;
-        $script = $document->createElement('script'); $script->setAttribute('src', '/assets/tooltips.js'); $script->setAttribute('defer', 'defer'); $heads->item(0)?->appendChild($script);
+        $head = $heads->item(0); if (!$head instanceof DOMElement) return;
+        foreach (iterator_to_array($document->getElementsByTagName('link')) as $link) {
+            if ($link instanceof DOMElement && $link->getAttribute('href') === '/assets/installer.css') {
+                $link->parentNode?->removeChild($link);
+            }
+        }
+        $css = @file_get_contents($this->basePath . '/public/assets/installer.css');
+        $applicationCss = @file_get_contents($this->basePath . '/public/assets/phase27.css');
+        if (is_string($applicationCss)) $css = (is_string($css) ? $css : '') . "\n" . $applicationCss;
+        if (is_string($css)) {
+            $style = $document->createElement('style');
+            $style->appendChild($document->createTextNode($css));
+            $head->appendChild($style);
+        }
+        // Explicitly declare an empty icon so browsers do not generate an
+        // unnecessary /favicon.ico request for installations without one.
+        $icon = $document->createElement('link');
+        $icon->setAttribute('rel', 'icon');
+        $icon->setAttribute('href', 'data:,');
+        $head->appendChild($icon);
+        $javascript = @file_get_contents($this->basePath . '/public/assets/tooltips.js');
+        if (is_string($javascript)) {
+            $script = $document->createElement('script');
+            $script->appendChild($document->createTextNode($javascript));
+            $head->appendChild($script);
+        }
+        $logbox = @file_get_contents($this->basePath . '/public/assets/logbox.js');
+        if (is_string($logbox)) {
+            $script = $document->createElement('script');
+            $script->appendChild($document->createTextNode($logbox));
+            $head->appendChild($script);
+        }
+        $rankManual = @file_get_contents($this->basePath . '/public/assets/manual-rank.js');
+        if (is_string($rankManual)) {
+            $script = $document->createElement('script');
+            $script->appendChild($document->createTextNode($rankManual));
+            $head->appendChild($script);
+        }
     }
 }

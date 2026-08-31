@@ -23,6 +23,9 @@ final class KeywordController
         try {
             [$manager, $auth] = $this->factory->services();
             $actor = $this->actor($auth);
+            if (!is_string($request->query['website'] ?? null) || $request->query['website'] === '') {
+                return $this->websiteSelection($manager->websites($actor));
+            }
             $website = $this->websiteId($request->query['website'] ?? null);
             $rows = '';
             foreach ($manager->list($actor, $website) as $keyword) {
@@ -115,7 +118,7 @@ final class KeywordController
                 $active = (int) $keyword['active'] === 1;
                 $form .= '<form method="post" action="/keywords/status">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="id" value="' . Html::escape((string) $keyword['public_id']) . '"><input type="hidden" name="active" value="' . ($active ? '0' : '1') . '"><button>' . ($active ? 'Deactivate' : 'Activate') . '</button></form>';
                 $form .= '<form method="post" action="/keywords/delete">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="id" value="' . Html::escape((string) $keyword['public_id']) . '"><button class="danger">Delete keyword</button></form>';
-                $form .= '<form method="post" action="/rank-checks">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="keyword" value="' . Html::escape((string) $keyword['public_id']) . '"><button>Run rank check</button></form><p><a href="/rank-checks/history?website=' . $website . '&keyword=' . Html::escape((string) $keyword['public_id']) . '">View rank history</a></p>';
+                $form .= '<p class="rank-keyword-links"><a class="button" href="/rank-dashboard?website=' . $website . '&keyword=' . Html::escape((string) $keyword['public_id']) . '">Open rank dashboard</a><a href="/rank-checks/history?website=' . $website . '&keyword=' . Html::escape((string) $keyword['public_id']) . '">View rank history</a></p>';
             }
             return $this->page($editing ? 'Edit keyword' : 'Add keyword', $form);
         } catch (AuthorizationException $exception) { return $this->denied($exception); }
@@ -128,6 +131,19 @@ final class KeywordController
         $html = '';
         foreach ($values as $value) if (is_string($value)) $html .= '<option value="' . Html::escape($value) . '"' . ($value === $selected ? ' selected' : '') . '>' . Html::escape(ucfirst($value)) . '</option>';
         return $html;
+    }
+
+    private function websiteSelection(array $websites): Response
+    {
+        if ($websites === []) {
+            return $this->page('Keywords', '<div class="empty-state"><h2>No websites have been added yet.</h2><p>Add a website before creating and tracking keywords.</p><a class="button" href="/websites/create">Add the first website</a></div>');
+        }
+        $rows = '';
+        foreach ($websites as $website) {
+            $id = Html::escape((string) $website['public_id']);
+            $rows .= '<tr><td><strong>' . Html::escape((string) $website['site_name']) . '</strong></td><td class="technical-ltr">' . Html::escape((string) $website['normalized_domain']) . '</td><td>' . (int) $website['keyword_count'] . '</td><td><a class="button" href="/keywords?website=' . $id . '">Open keywords</a> <a href="/keywords/create?website=' . $id . '">Add keyword</a></td></tr>';
+        }
+        return $this->page('Keywords', '<p>Select a website to manage its keywords.</p><div class="table-scroll"><table><thead><tr><th>Website</th><th>Domain</th><th>Keywords</th><th>Actions</th></tr></thead><tbody>' . $rows . '</tbody></table></div>');
     }
 
     private function actor(object $auth): int { $user = $auth->user(); if ($user === null) throw new AuthorizationException('Authentication required.'); return (int) $user['id']; }

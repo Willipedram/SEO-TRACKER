@@ -21,6 +21,19 @@ final class KeywordManager
         return $this->database->fetchAll('SELECT public_id, keyword_text, target_url, search_engine, country_code, language_code, device, active, created_at, updated_at FROM keywords WHERE website_id = :website ORDER BY keyword_text, id', ['website' => $website['id']]);
     }
 
+    public function websites(int $actorId): array
+    {
+        $this->authorization->require($actorId, 'keywords.view');
+        return $this->database->fetchAll(
+            "SELECT websites.public_id, websites.site_name, websites.normalized_domain, websites.status, COUNT(keywords.id) AS keyword_count
+             FROM websites LEFT JOIN keywords ON keywords.website_id = websites.id
+             WHERE websites.owner_user_id = :owner AND websites.status <> 'archived'
+             GROUP BY websites.id, websites.public_id, websites.site_name, websites.normalized_domain, websites.status
+             ORDER BY websites.site_name, websites.id",
+            ['owner' => $actorId],
+        );
+    }
+
     public function find(int $actorId, string $websitePublicId, string $keywordPublicId, string $permission = 'keywords.view'): array
     {
         $this->permission($actorId, $permission);
