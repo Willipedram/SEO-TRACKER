@@ -13,9 +13,9 @@ remain reviewable in source diffs and release systems that reject binary files.
 5. Open Rank Tracking and press the user-IP rank button.
 
 After replacing extension files, always press **Reload** for this extension on
-`chrome://extensions`. The dashboard checks protocol version 3 and stops with an
+`chrome://extensions`. The dashboard checks protocol version 4 and stops with an
 explicit upgrade message instead of silently running a cached worker. A current run
-logs `EXTENSION_VERSION | version=1.2.0 protocol=3 required=3`; older logs without
+logs `EXTENSION_VERSION | version=1.3.0 protocol=4 required=4`; older logs without
 `anchors=`, `preferred=`, and `strategy=` come from a stale extension worker.
 
 The extension has a fixed Google Search permission, but requests application-site
@@ -32,12 +32,13 @@ Page readiness is verified by polling the actual Incognito document through
 must all match. The runner no longer depends on `tabs.onUpdated`, whose completion
 event can be missing for an Incognito tab even when Google visibly finished loading.
 Result inspection also retries transient frame replacement errors three times.
-It recognizes both heading-based results and Google's newer result containers,
-decodes `/url?q=...` redirect links, and evaluates every external link inside the
-search-results root rather than dropping a valid result merely because its markup
-does not match a preferred container. Diagnostic entries include total anchor,
-preferred-result, and accepted-link counts plus the extraction strategy, so a markup
-change can be distinguished from a genuine no-match result.
+It recognizes both heading-based results and Google's newer result containers.
+Direct `/url?q=...` redirects are decoded locally. Newer `/goto?url=CAES...` links
+contain an opaque Google token rather than an encoded destination; the worker now
+resolves those links in temporary inactive tabs in the same Incognito window, reads
+the final URL, and immediately closes each resolver tab. Links are resolved in small
+batches to avoid flooding the browser. Diagnostic entries include total anchor,
+preferred-result, candidate, opaque-redirect, and accepted-link counts.
 Every run logs the normalized target as `TARGET_DOMAIN` and the complete accepted
 URL list for each page as `SEEN_URLS`. When extraction returns zero links it also
 logs up to twenty original anchor values as `RAW_HREFS`, making redirect and markup
