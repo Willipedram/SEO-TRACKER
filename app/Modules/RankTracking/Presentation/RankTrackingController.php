@@ -39,6 +39,8 @@ final class RankTrackingController
 
     public function recordManual(Request $request): Response
     {
+        $diagnosticId = is_string($request->body['diagnostic_id'] ?? null) && preg_match('/^[a-f0-9-]{36}$/i', $request->body['diagnostic_id']) ? $request->body['diagnostic_id'] : bin2hex(random_bytes(16));
+        $logger = $this->factory->logger();
         try {
             [$manager, $auth] = $this->factory->services();
             $website = $this->id($request->body['website'] ?? null, 'Website');
@@ -46,11 +48,20 @@ final class RankTrackingController
             $position = filter_var($request->body['position'] ?? null, FILTER_VALIDATE_INT);
             $url = trim(is_string($request->body['ranking_url'] ?? null) ? $request->body['ranking_url'] : '');
             if ($position === false) throw new InvalidArgumentException('Manual position is invalid.');
+            $logger->info('Manual rank persistence started.', ['diagnostic_id'=>$diagnosticId,'website_id'=>$website,'keyword_id'=>$keyword,'position'=>$position,'stage'=>'validation_complete']);
             $manager->recordManual($this->actor($auth), $website, $keyword, $position, $url);
+            $logger->info('Manual rank persistence completed.', ['diagnostic_id'=>$diagnosticId,'website_id'=>$website,'keyword_id'=>$keyword,'position'=>$position,'stage'=>'transaction_committed']);
             return Response::redirect('/rank-dashboard?website=' . rawurlencode($website) . '&keyword=' . rawurlencode($keyword));
-        } catch (AuthorizationException $exception) { return $this->error($exception->getMessage(), 403); }
-        catch (InvalidArgumentException $exception) { return $this->error($exception->getMessage(), 422); }
-        catch (Throwable) { return $this->error('Manual rank could not be recorded.', 503); }
+        } catch (AuthorizationException $exception) {
+            $logger->warning('Manual rank persistence denied.', ['diagnostic_id'=>$diagnosticId,'stage'=>'authorization','exception'=>$exception::class,'message'=>$exception->getMessage()]);
+            return $this->manualError($exception->getMessage(), 403, $diagnosticId);
+        } catch (InvalidArgumentException $exception) {
+            $logger->warning('Manual rank persistence rejected.', ['diagnostic_id'=>$diagnosticId,'stage'=>'validation','exception'=>$exception::class,'message'=>$exception->getMessage()]);
+            return $this->manualError($exception->getMessage(), 422, $diagnosticId);
+        } catch (Throwable $exception) {
+            $logger->error('Manual rank persistence failed.', ['diagnostic_id'=>$diagnosticId,'stage'=>'database_transaction','exception'=>$exception::class,'message'=>$exception->getMessage(),'file'=>$exception->getFile(),'line'=>$exception->getLine()]);
+            return $this->manualError('Manual rank could not be recorded.', 503, $diagnosticId);
+        }
     }
 
     public function status(Request $request): Response
@@ -186,5 +197,6 @@ final class RankTrackingController
     private function actor(object $auth): int { $user = $auth->user(); if ($user === null) throw new AuthorizationException('Authentication required.'); return (int) $user['id']; }
     private function id(mixed $id, string $label): string { if (!is_string($id) || !preg_match('/^[a-f0-9]{32}$/', $id)) throw new InvalidArgumentException($label . ' not found.'); return $id; }
     private function error(string $message, int $status): Response { return $this->page('Rank Tracking', '<p class="error">' . Html::escape($message) . '</p>', $status); }
+    private function manualError(string $message, int $status, string $diagnosticId): Response { return Response::json(['error'=>$message,'diagnostic_id'=>$diagnosticId], $status); }
     private function page(string $title, string $content, int $status = 200): Response { return Response::html('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . Html::escape($title) . ' — SEO Tracker</title><link rel="stylesheet" href="/assets/installer.css"></head><body><main class="card wide"><h1>' . Html::escape($title) . '</h1>' . $content . '</main></body></html>', $status); }
 }

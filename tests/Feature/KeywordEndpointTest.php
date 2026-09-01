@@ -30,6 +30,7 @@ final class KeywordEndpointTest extends TestCase
     {
         $base = dirname(__DIR__, 2);
         $path = sys_get_temp_dir() . '/seo-keyword-endpoint-' . bin2hex(random_bytes(4)) . '.sqlite';
+        $logPath = $path . '.log';
         $pdo = new PDO('sqlite:' . $path, options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
         (new SchemaInstaller())->install($pdo, 'Administrator', 'admin@example.com', 'correct-horse-battery', 'Tracker');
         $database = new Database($pdo);
@@ -42,7 +43,7 @@ final class KeywordEndpointTest extends TestCase
         $config = new Config([
             'app' => ['key' => 'test-key', 'locale' => 'fa', 'rtl_locales' => ['fa']], 'auth' => [], 'keywords' => ['search_engines' => ['google', 'bing'], 'devices' => ['desktop', 'mobile'], 'countries' => ['US']],
             'database' => ['default' => 'sqlite', 'connections' => ['sqlite' => ['driver' => 'sqlite', 'database' => $path]]],
-            'logging' => ['path' => sys_get_temp_dir() . '/seo-keyword-endpoint.log', 'level' => 'error'],
+            'logging' => ['path' => $logPath, 'level' => 'info'],
         ]);
         $controller = new KeywordController(new KeywordFactory($base, $config));
         $selection = $controller->index(new Request('GET', '/keywords'));
@@ -74,6 +75,10 @@ final class KeywordEndpointTest extends TestCase
         $manual = $rankController->recordManual(new Request('POST', '/rank-checks/manual', body: ['website'=>$website,'keyword'=>$keyword,'position'=>'8','ranking_url'=>'https://example.com/manual-result']));
         $this->assertSame(303, $manual->status);
         $this->assertSame('/rank-dashboard?website='.$website.'&keyword='.$keyword, $manual->headers['Location']);
+        $rankLog=(string)file_get_contents($logPath);
+        $this->assertTrue(str_contains($rankLog,'Manual rank persistence started.'));
+        $this->assertTrue(str_contains($rankLog,'Manual rank persistence completed.'));
+        $this->assertTrue(str_contains($rankLog,'transaction_committed'));
         $database->execute("INSERT INTO users (name, email, password_hash, email_verified_at, disabled_at, created_at, updated_at) VALUES ('No Access', 'none@example.com', 'unused', NULL, NULL, '2026-01-01', '2026-01-01')");
         $limited = (int) $database->fetchOne('SELECT id FROM users WHERE email = :email', ['email' => 'none@example.com'])['id'];
         $_SESSION['auth'] = ['user_id' => $limited, 'authenticated_at' => time(), 'last_activity' => time()];
@@ -81,5 +86,6 @@ final class KeywordEndpointTest extends TestCase
         $this->assertSame(403, $controller->create(new Request('POST', '/keywords/create', body: ['website' => $website, 'keyword' => 'blocked', 'search_engine' => 'google', 'country' => 'US', 'language' => 'en', 'device' => 'desktop', 'active' => '1']))->status);
         $_SESSION = [];
         unlink($path);
+        @unlink($logPath);
     }
 }

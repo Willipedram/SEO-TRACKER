@@ -10,6 +10,8 @@ use App\Core\Rbac\Authorization;
 use App\Modules\RankTracking\Infrastructure\RankAdapterRegistry;
 use InvalidArgumentException;
 use Closure;
+use RuntimeException;
+use Throwable;
 
 final class RankCheckManager
 {
@@ -49,14 +51,26 @@ final class RankCheckManager
 
         $requestPublic = bin2hex(random_bytes(16)); $attemptPublic = bin2hex(random_bytes(16)); $resultPublic = bin2hex(random_bytes(16));
         $now = gmdate('Y-m-d H:i:s'); $lease = hash('sha256', random_bytes(32));
-        $this->database->transaction(function (Database $database) use ($actorId, $keyword, $position, $rankingUrl, $requestPublic, $attemptPublic, $resultPublic, $now, $lease): void {
-            $database->execute("INSERT INTO rank_check_requests (public_id,user_id,website_id,keyword_id,keyword_text,target_url,search_engine,country_code,language_code,requested_device,execution_source,adapter_key,status,attempt_count,available_at,created_at,started_at,completed_at,error_code,error_detail) VALUES (:public,:user,:website,:keyword,:text,:target,:engine,:country,:language,:device,'client','manual','completed',1,:at,:at,:at,:at,NULL,NULL)", ['public'=>$requestPublic,'user'=>$actorId,'website'=>$keyword['website_id'],'keyword'=>$keyword['id'],'text'=>$keyword['keyword_text'],'target'=>$keyword['target_url'],'engine'=>$keyword['search_engine'],'country'=>$keyword['country_code'],'language'=>$keyword['language_code'],'device'=>$keyword['device'],'at'=>$now]);
+        $stage = 'request_insert';
+        try {
+        $this->database->transaction(function (Database $database) use ($actorId, $keyword, $position, $rankingUrl, $requestPublic, $attemptPublic, $resultPublic, $now, $lease, &$stage): void {
+            $database->execute("INSERT INTO rank_check_requests (public_id,user_id,website_id,keyword_id,keyword_text,target_url,search_engine,country_code,language_code,requested_device,execution_source,adapter_key,status,attempt_count,available_at,created_at,started_at,completed_at,error_code,error_detail) VALUES (:public,:user,:website,:keyword,:text,:target,:engine,:country,:language,:device,'client','manual','completed',1,:available,:created,:started,:completed,NULL,NULL)", ['public'=>$requestPublic,'user'=>$actorId,'website'=>$keyword['website_id'],'keyword'=>$keyword['id'],'text'=>$keyword['keyword_text'],'target'=>$keyword['target_url'],'engine'=>$keyword['search_engine'],'country'=>$keyword['country_code'],'language'=>$keyword['language_code'],'device'=>$keyword['device'],'available'=>$now,'created'=>$now,'started'=>$now,'completed'=>$now]);
+            $stage = 'request_lookup';
             $requestId = (int) ($database->fetchOne('SELECT id FROM rank_check_requests WHERE public_id=:public', ['public'=>$requestPublic])['id'] ?? 0);
-            $database->execute("INSERT INTO rank_execution_attempts (public_id,request_id,attempt_number,execution_source,adapter_key,adapter_version,requested_device,execution_device,user_agent_profile,network_context,status,leased_by,lease_token_hash,lease_expires_at,started_at,completed_at,error_code,error_detail,retryable) VALUES (:public,:request,1,'client','manual','1.0.0',:device,:execution,'user-browser:manual','user_observed','succeeded','manual-entry',:lease,:at,:at,:at,NULL,NULL,0)", ['public'=>$attemptPublic,'request'=>$requestId,'device'=>$keyword['device'],'execution'=>'manual_'.$keyword['device'],'lease'=>$lease,'at'=>$now]);
+            if ($requestId < 1) throw new RuntimeException('Inserted rank request could not be loaded.');
+            $stage = 'attempt_insert';
+            $database->execute("INSERT INTO rank_execution_attempts (public_id,request_id,attempt_number,execution_source,adapter_key,adapter_version,requested_device,execution_device,user_agent_profile,network_context,status,leased_by,lease_token_hash,lease_expires_at,started_at,completed_at,error_code,error_detail,retryable) VALUES (:public,:request,1,'client','manual','1.0.0',:device,:execution,'user-browser:manual','user_observed','succeeded','manual-entry',:lease,:expires,:started,:completed,NULL,NULL,0)", ['public'=>$attemptPublic,'request'=>$requestId,'device'=>$keyword['device'],'execution'=>'manual_'.$keyword['device'],'lease'=>$lease,'expires'=>$now,'started'=>$now,'completed'=>$now]);
+            $stage = 'attempt_lookup';
             $attemptId = (int) ($database->fetchOne('SELECT id FROM rank_execution_attempts WHERE public_id=:public', ['public'=>$attemptPublic])['id'] ?? 0);
-            $database->execute("INSERT INTO rank_results (public_id,request_id,attempt_id,website_id,keyword_id,result_type,position,ranking_url,checked_depth,search_engine,country_code,language_code,requested_device,execution_device,execution_source,adapter_key,adapter_version,observed_at,created_at) VALUES (:public,:request,:attempt,:website,:keyword,'ranked',:position,:url,100,:engine,:country,:language,:device,:execution,'client','manual','1.0.0',:at,:at)", ['public'=>$resultPublic,'request'=>$requestId,'attempt'=>$attemptId,'website'=>$keyword['website_id'],'keyword'=>$keyword['id'],'position'=>$position,'url'=>$rankingUrl,'engine'=>$keyword['search_engine'],'country'=>$keyword['country_code'],'language'=>$keyword['language_code'],'device'=>$keyword['device'],'execution'=>'manual_'.$keyword['device'],'at'=>$now]);
+            if ($attemptId < 1) throw new RuntimeException('Inserted rank attempt could not be loaded.');
+            $stage = 'result_insert';
+            $database->execute("INSERT INTO rank_results (public_id,request_id,attempt_id,website_id,keyword_id,result_type,position,ranking_url,checked_depth,search_engine,country_code,language_code,requested_device,execution_device,execution_source,adapter_key,adapter_version,observed_at,created_at) VALUES (:public,:request,:attempt,:website,:keyword,'ranked',:position,:url,100,:engine,:country,:language,:device,:execution,'client','manual','1.0.0',:observed,:created)", ['public'=>$resultPublic,'request'=>$requestId,'attempt'=>$attemptId,'website'=>$keyword['website_id'],'keyword'=>$keyword['id'],'position'=>$position,'url'=>$rankingUrl,'engine'=>$keyword['search_engine'],'country'=>$keyword['country_code'],'language'=>$keyword['language_code'],'device'=>$keyword['device'],'execution'=>'manual_'.$keyword['device'],'observed'=>$now,'created'=>$now]);
+            $stage = 'audit_insert';
             $this->audit->record($actorId, 'rank_check.manual_recorded', 'rank_check', $requestPublic, ['position'=>$position,'device'=>$keyword['device']]);
         });
+        } catch (Throwable $exception) {
+            throw new RuntimeException('Manual rank persistence failed at '.$stage.': '.$exception->getMessage(), 0, $exception);
+        }
         return $requestPublic;
     }
 

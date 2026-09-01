@@ -45,11 +45,11 @@
     if (event.data.type !== 'SEO_RANK_DONE') return;
     show(`\u0631\u062a\u0628\u0647 ${event.data.position} \u067e\u06cc\u062f\u0627 \u0634\u062f\u061b \u062f\u0631 \u062d\u0627\u0644 \u0630\u062e\u06cc\u0631\u0647\u2026`, 100);
     debug('SAVE_START', `position=${event.data.position} url=${event.data.url}`);
-    const body = new URLSearchParams({_token:document.getElementById('manual-rank-csrf').value, website:active.website, keyword:active.keyword, position:String(event.data.position), ranking_url:event.data.url});
+    const body = new URLSearchParams({_token:document.getElementById('manual-rank-csrf').value, website:active.website, keyword:active.keyword, position:String(event.data.position), ranking_url:event.data.url, diagnostic_id:active.id});
     try {
       const response = await fetch('/rank-checks/manual', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body, credentials:'same-origin'});
       debug('SAVE_RESPONSE', `status=${response.status}`);
-      if (!response.ok) { show('\u0630\u062e\u06cc\u0631\u0647 \u0631\u062a\u0628\u0647 \u0646\u0627\u0645\u0648\u0641\u0642 \u0628\u0648\u062f.', 0); active = null; return; }
+      if (!response.ok) { const detail=(await response.text()).replace(/\s+/g,' ').slice(0,1000);debug('SAVE_FAILED_BODY',detail);show('\u0630\u062e\u06cc\u0631\u0647 \u0631\u062a\u0628\u0647 \u0646\u0627\u0645\u0648\u0641\u0642 \u0628\u0648\u062f. \u0634\u0646\u0627\u0633\u0647 \u067e\u06cc\u06af\u06cc\u0631\u06cc \u062f\u0631 \u06af\u0632\u0627\u0631\u0634 \u062b\u0628\u062a \u0634\u062f.', 0); active = null; return; }
       window.setTimeout(() => location.reload(), 500);
     } catch (error) { debug('SAVE_NETWORK_ERROR', error?.message || 'unknown'); show('\u0630\u062e\u06cc\u0631\u0647 \u0631\u062a\u0628\u0647 \u0646\u0627\u0645\u0648\u0641\u0642 \u0628\u0648\u062f.', 0); active = null; }
   });

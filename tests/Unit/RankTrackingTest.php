@@ -182,6 +182,10 @@ final class RankTrackingTest extends TestCase
         $rejected = false;
         try { $manager->recordManual(1, $website, $keyword, 3, 'https://attacker.example/rank'); } catch (InvalidArgumentException) { $rejected = true; }
         $this->assertTrue($rejected);
+
+        $source=(string)file_get_contents(dirname(__DIR__,2).'/app/Modules/RankTracking/Application/RankCheckManager.php');
+        $this->assertTrue(!str_contains($source,':at,:at'),'Native MySQL prepared statements cannot reuse a named placeholder.');
+        foreach([':available',':created',':started',':completed',':expires',':observed'] as $placeholder)$this->assertTrue(str_contains($source,$placeholder));
     }
 
     private function services(RankAdapter $adapter, string $device = 'desktop', int $managerRateLimit = 10): array
