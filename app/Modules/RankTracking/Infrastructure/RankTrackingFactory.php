@@ -32,9 +32,14 @@ final class RankTrackingFactory
 
     public function worker(): RankWorker
     {
+        return new RankWorker((new ConnectionFactory($this->config))->connect(), $this->registry ?? new RankAdapterRegistry(), $this->logger(), (int) $this->config->get('rank_tracking.max_attempts', 3), (int) $this->config->get('rank_tracking.lease_seconds', 120));
+    }
+
+    public function logger(): Logger
+    {
         $path = (string) $this->config->get('logging.path', 'storage/logs/application.log');
         if (!str_starts_with($path, '/')) $path = $this->basePath . '/' . $path;
-        return new RankWorker((new ConnectionFactory($this->config))->connect(), $this->registry ?? new RankAdapterRegistry(), new Logger($path, (string) $this->config->get('logging.level', 'info')), (int) $this->config->get('rank_tracking.max_attempts', 3), (int) $this->config->get('rank_tracking.lease_seconds', 120));
+        return new Logger($path, (string) $this->config->get('logging.level', 'info'));
     }
 
     public function dashboard(): RankDashboardService
