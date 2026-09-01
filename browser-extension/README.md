@@ -12,6 +12,12 @@ remain reviewable in source diffs and release systems that reject binary files.
    icon once, approve access to that domain, and wait for the page to reload.
 5. Open Rank Tracking and press the user-IP rank button.
 
+After replacing extension files, always press **Reload** for this extension on
+`chrome://extensions`. The dashboard checks protocol version 2 and stops with an
+explicit upgrade message instead of silently running a cached worker. A current run
+logs `EXTENSION_VERSION | version=1.1.0 protocol=2 required=2`; older logs without
+`anchors=`, `preferred=`, and `strategy=` come from a stale extension worker.
+
 The extension has a fixed Google Search permission, but requests application-site
 access only after the user clicks its toolbar icon. It then registers the bridge for
 that exact scheme and host and remembers it across browser restarts. Multiple SEO

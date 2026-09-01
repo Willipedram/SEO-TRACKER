@@ -20,7 +20,7 @@ const inspect = async tabId => {
       const destination=href=>{try{const parsed=new URL(href,location.href);if(googleHost(parsed.hostname)&&parsed.pathname==='/url'){const target=parsed.searchParams.get('q')||parsed.searchParams.get('url');if(target)return new URL(target).href;}if(!googleHost(parsed.hostname)&&/^https?:$/.test(parsed.protocol))return parsed.href;}catch{}return null;};
       const roots=[document.querySelector('#search'),document.querySelector('#rso'),document.querySelector('[role="main"]'),document.querySelector('main')].filter(Boolean);
       const root=roots[0]||document.body; const anchors=[...root.querySelectorAll('a[href]')]; const preferred=anchors.filter(anchor=>anchor.querySelector('h3')||anchor.closest('.g,.MjjYud,[data-snhf],[data-header-feature]'));
-      const pool=preferred.length?preferred:anchors.filter(anchor=>(anchor.textContent||'').trim().length>=8);
+      const pool=preferred.length?preferred:anchors;
       const seen=new Set(),links=[];for(const anchor of pool){const url=destination(anchor.getAttribute('href')||anchor.href);if(!url)continue;const key=new URL(url).origin+new URL(url).pathname.replace(/\/$/,'');if(seen.has(key))continue;seen.add(key);links.push(url);}
       return {captcha:!!document.querySelector('form[action*="sorry"],iframe[src*="recaptcha"],#captcha-form'),links,diagnostics:{title:document.title,url:location.href,root:root.id||root.getAttribute('role')||root.tagName,anchors:anchors.length,preferred:preferred.length,strategy:preferred.length?'result-container':'external-link-fallback'}};
     }}).then(result=>result[0]?.result||{captcha:false,links:[],diagnostics:{strategy:'no-result'}});}
@@ -48,5 +48,5 @@ chrome.runtime.onMessage.addListener((job, sender, reply) => {
       await notify(dashboardTabId,{type:'SEO_RANK_ERROR',id:job.id,message:'دامنه در نتایج خوانده‌شده پیدا نشد.',debug:'SEARCH_COMPLETE pages=10 no_match=true'});
     } catch (error) { if(dashboardTabId) await notify(dashboardTabId,{type:'SEO_RANK_ERROR',id:job.id,message:error?.message==='CAPTCHA'?'Google درخواست CAPTCHA کرد؛ پس از رفع آن دوباره تلاش کنید.':error?.message==='DOCUMENT_TIMEOUT'?'سند نتایج Google در دسترس افزونه قرار نگرفت؛ مجوز دسترسی Google و Incognito را بررسی کنید.':error?.message==='INSPECT_FAILED'?'افزونه نتوانست نتایج صفحه Google را بخواند؛ دسترسی افزونه را بررسی کنید.':'اجرای جستجو کامل نشد. دسترسی Incognito و اتصال اینترنت را بررسی کنید.',debug:`RUN_FAILED code=${error?.message||'unknown'}`}); }
     finally { if (windowId) chrome.windows.remove(windowId).catch(()=>{}); }
-  })(); reply({accepted:true}); return true;
+  })(); reply({accepted:true,protocol:2,version:chrome.runtime.getManifest().version}); return true;
 });
