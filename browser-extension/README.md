@@ -13,9 +13,9 @@ remain reviewable in source diffs and release systems that reject binary files.
 5. Open Rank Tracking and press the user-IP rank button.
 
 After replacing extension files, always press **Reload** for this extension on
-`chrome://extensions`. The dashboard checks protocol version 4 and stops with an
+`chrome://extensions`. The dashboard checks protocol version 5 and stops with an
 explicit upgrade message instead of silently running a cached worker. A current run
-logs `EXTENSION_VERSION | version=1.3.0 protocol=4 required=4`; older logs without
+logs `EXTENSION_VERSION | version=1.4.0 protocol=5 required=5`; older logs without
 `anchors=`, `preferred=`, and `strategy=` come from a stale extension worker.
 
 The extension has a fixed Google Search permission, but requests application-site
@@ -24,8 +24,8 @@ that exact scheme and host and remembers it across browser restarts. Multiple SE
 Tracker domains can be enabled independently without editing or rebuilding files.
 It opens a background Incognito window, checks up to ten result pages, reports
 progress only to the tab that started the run, and closes that window. Google can
-present a CAPTCHA or change its result markup; in that case the run stops with an
-error and no rank is stored.
+change its result markup; diagnostics are reported when links cannot be extracted.
+A CAPTCHA pauses the run for manual resolution as described below.
 
 Page readiness is verified by polling the actual Incognito document through
 `chrome.scripting.executeScript`: its URL, `start` offset, and `document.readyState`
@@ -39,6 +39,12 @@ resolves those links in temporary inactive tabs in the same Incognito window, re
 the final URL, and immediately closes each resolver tab. Links are resolved in small
 batches to avoid flooding the browser. Diagnostic entries include total anchor,
 preferred-result, candidate, opaque-redirect, and accepted-link counts.
+When Google presents a CAPTCHA, the Incognito window is focused and the job waits up
+to ten minutes for the user to solve it. The worker reports `CAPTCHA_WAITING` and a
+heartbeat `CAPTCHA_STILL_WAITING`; after the challenge disappears it reports
+`CAPTCHA_SOLVED`, minimizes the Incognito window, and resumes the same page instead
+of failing or restarting the job. Closing the window or exceeding the timeout yields
+a distinct diagnostic error.
 Every run logs the normalized target as `TARGET_DOMAIN` and the complete accepted
 URL list for each page as `SEEN_URLS`. When extraction returns zero links it also
 logs up to twenty original anchor values as `RAW_HREFS`, making redirect and markup

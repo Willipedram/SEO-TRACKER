@@ -51,6 +51,26 @@ const inspect = async tabId => {
     catch(error){if(attempt===2)throw new Error('INSPECT_FAILED');await new Promise(resolve=>setTimeout(resolve,500));}
   }
 };
+const waitForCaptchaResolution = async (tabId,windowId,dashboardTabId,jobId,page,progress) => {
+  const started=Date.now(),deadline=started+600000;let lastNotice=0,clearSince=null;
+  await chrome.windows.update(windowId,{focused:true});
+  await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:jobId,progress,message:'Google کپچا نمایش داده است؛ آن را در پنجره ناشناس حل کنید. اجرای رتبه‌یابی منتظر می‌ماند.',debug:`CAPTCHA_WAITING page=${page} timeout_seconds=600`});
+  while(Date.now()<deadline){
+    try { await chrome.tabs.get(tabId); } catch { throw new Error('CAPTCHA_WINDOW_CLOSED'); }
+    const result=await inspect(tabId);
+    if(!result.captcha){
+      if(clearSince===null)clearSince=Date.now();
+      if((result.candidates||[]).length>0||Date.now()-clearSince>=3000){
+        await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:jobId,progress,message:'کپچا حل شد؛ رتبه‌یابی ادامه پیدا کرد.',debug:`CAPTCHA_SOLVED page=${page} waited_seconds=${Math.round((Date.now()-started)/1000)}`});
+        await chrome.windows.update(windowId,{state:'minimized'}).catch(()=>{});
+        return result;
+      }
+    }else clearSince=null;
+    if(Date.now()-lastNotice>=15000){lastNotice=Date.now();await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:jobId,progress,message:'همچنان منتظر حل کپچا در پنجره ناشناس هستم…',debug:`CAPTCHA_STILL_WAITING page=${page} elapsed_seconds=${Math.round((Date.now()-started)/1000)}`});}
+    await sleep(1000);
+  }
+  throw new Error('CAPTCHA_TIMEOUT');
+};
 chrome.runtime.onMessage.addListener((job, sender, reply) => {
   if (job?.source !== 'seo-tracker-page' || job?.type !== 'SEO_RANK_START') return;
   (async () => {
@@ -66,7 +86,7 @@ chrome.runtime.onMessage.addListener((job, sender, reply) => {
       for (let page=0; page<10; page++) {
         if(page>0){const next=new URL(first);next.searchParams.set('start',String(page*10));await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:job.id,progress:page*10,message:`در حال رفتن به صفحه ${page+1} Google…`,debug:`NAVIGATE page=${page+1} start=${page*10}`});await navigate(tabId,next.toString());}else await waitForGoogle(tabId,'0');
         await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:job.id,progress:(page+1)*9,message:`در حال بررسی صفحه ${page+1} Google…`,debug:`PAGE_LOADED page=${page+1} start=${page*10}`});
-        const result=await inspect(tabId); if(result.captcha) throw new Error('CAPTCHA');
+        let result=await inspect(tabId);if(result.captcha)result=await waitForCaptchaResolution(tabId,windowId,dashboardTabId,job.id,page+1,(page+1)*9);
         const diag=result.diagnostics||{};const candidates=result.candidates||[];
         await notify(dashboardTabId,{type:'SEO_RANK_PROGRESS',id:job.id,progress:(page+1)*9,message:`در حال بازکردن ${candidates.length} پیوند نتیجه در صفحه ${page+1}…`,debug:`RESOLVE_START page=${page+1} candidates=${candidates.length} opaque=${candidates.filter(candidate=>!candidate.direct).length}`});
         const links=await resolveCandidates(windowId,diag.url||first,candidates);
@@ -77,7 +97,7 @@ chrome.runtime.onMessage.addListener((job, sender, reply) => {
         if (found >= 0) { await notify(dashboardTabId,{type:'SEO_RANK_DONE',id:job.id,position:page*10+found+1,url:links[found],debug:`MATCH_FOUND page=${page+1} index=${found} position=${page*10+found+1}`}); return; }
       }
       await notify(dashboardTabId,{type:'SEO_RANK_ERROR',id:job.id,message:'دامنه در نتایج خوانده‌شده پیدا نشد.',debug:'SEARCH_COMPLETE pages=10 no_match=true'});
-    } catch (error) { if(dashboardTabId) await notify(dashboardTabId,{type:'SEO_RANK_ERROR',id:job.id,message:error?.message==='CAPTCHA'?'Google درخواست CAPTCHA کرد؛ پس از رفع آن دوباره تلاش کنید.':error?.message==='DOCUMENT_TIMEOUT'?'سند نتایج Google در دسترس افزونه قرار نگرفت؛ مجوز دسترسی Google و Incognito را بررسی کنید.':error?.message==='INSPECT_FAILED'?'افزونه نتوانست نتایج صفحه Google را بخواند؛ دسترسی افزونه را بررسی کنید.':'اجرای جستجو کامل نشد. دسترسی Incognito و اتصال اینترنت را بررسی کنید.',debug:`RUN_FAILED code=${error?.message||'unknown'}`}); }
+    } catch (error) { if(dashboardTabId) await notify(dashboardTabId,{type:'SEO_RANK_ERROR',id:job.id,message:error?.message==='CAPTCHA_TIMEOUT'?'مهلت ۱۰ دقیقه‌ای حل کپچا تمام شد؛ دوباره رتبه‌یابی را اجرا کنید.':error?.message==='CAPTCHA_WINDOW_CLOSED'?'پنجره ناشناس هنگام انتظار برای کپچا بسته شد.':error?.message==='DOCUMENT_TIMEOUT'?'سند نتایج Google در دسترس افزونه قرار نگرفت؛ مجوز دسترسی Google و Incognito را بررسی کنید.':error?.message==='INSPECT_FAILED'?'افزونه نتوانست نتایج صفحه Google را بخواند؛ دسترسی افزونه را بررسی کنید.':'اجرای جستجو کامل نشد. دسترسی Incognito و اتصال اینترنت را بررسی کنید.',debug:`RUN_FAILED code=${error?.message||'unknown'}`}); }
     finally { if (windowId) chrome.windows.remove(windowId).catch(()=>{}); }
-  })(); reply({accepted:true,protocol:4,version:chrome.runtime.getManifest().version}); return true;
+  })(); reply({accepted:true,protocol:5,version:chrome.runtime.getManifest().version}); return true;
 });
