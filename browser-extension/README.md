@@ -13,9 +13,9 @@ remain reviewable in source diffs and release systems that reject binary files.
 5. Open Rank Tracking and press the user-IP rank button.
 
 After replacing extension files, always press **Reload** for this extension on
-`chrome://extensions`. The dashboard checks protocol version 5 and stops with an
+`chrome://extensions`. The dashboard checks protocol version 6 and stops with an
 explicit upgrade message instead of silently running a cached worker. A current run
-logs `EXTENSION_VERSION | version=1.4.0 protocol=5 required=5`; older logs without
+logs `EXTENSION_VERSION | version=1.5.0 protocol=6 required=6`; older logs without
 `anchors=`, `preferred=`, and `strategy=` come from a stale extension worker.
 
 The extension has a fixed Google Search permission, but requests application-site
@@ -33,12 +33,12 @@ must all match. The runner no longer depends on `tabs.onUpdated`, whose completi
 event can be missing for an Incognito tab even when Google visibly finished loading.
 Result inspection also retries transient frame replacement errors three times.
 It recognizes both heading-based results and Google's newer result containers.
-Direct `/url?q=...` redirects are decoded locally. Newer `/goto?url=CAES...` links
-contain an opaque Google token rather than an encoded destination; the worker now
-resolves those links in temporary inactive tabs in the same Incognito window, reads
-the final URL, and immediately closes each resolver tab. Links are resolved in small
-batches to avoid flooding the browser. Diagnostic entries include total anchor,
-preferred-result, candidate, opaque-redirect, and accepted-link counts.
+Instead of opening every opaque `/goto?url=CAES...` result, it reads the visible
+address from the result's `<cite>` element (for example `https://example.com` before
+the breadcrumb separator). This makes a page scan immediate, avoids loading result
+sites, and keeps result order aligned with heading links. Direct external links and
+legacy `/url?q=...` links remain supported as fallbacks. Diagnostic entries include
+total anchor, preferred-result, visible-address, and accepted-link counts.
 When Google presents a CAPTCHA, the Incognito window is focused and the job waits up
 to ten minutes for the user to solve it. The worker reports `CAPTCHA_WAITING` and a
 heartbeat `CAPTCHA_STILL_WAITING`; after the challenge disappears it reports

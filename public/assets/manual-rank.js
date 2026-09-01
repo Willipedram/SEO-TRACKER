@@ -4,7 +4,7 @@
   let active = null;
   let responseTimer = null;
   let lastProgress = 0;
-  const requiredProtocol = 5;
+  const requiredProtocol = 6;
   const debug = (stage, detail = '') => {
     const output = modal()?.querySelector('[data-manual-rank-debug]');
     if (!output) return;
