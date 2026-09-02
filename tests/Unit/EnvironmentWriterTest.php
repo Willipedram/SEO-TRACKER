@@ -21,7 +21,10 @@ final class EnvironmentWriterTest extends TestCase
         putenv('DB_PASSWORD');
         Environment::load($path);
         $this->assertSame($password, $_ENV['DB_PASSWORD']);
-        foreach (['APP_ENV', 'APP_DEBUG', 'APP_URL', 'APP_KEY', 'APP_TIMEZONE', 'APP_TRUSTED_HOSTS', 'LOG_LEVEL', 'LOG_PATH', 'DB_CONNECTION', 'DB_HOST', 'DB_PORT', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD', 'DB_CHARSET', 'SESSION_SECURE', 'SESSION_SAME_SITE', 'SESSION_LIFETIME'] as $name) {
+        $this->assertSame('Asia/Tehran', $_ENV['APP_TIMEZONE']);
+        $this->assertSame('https://tracker.example/oauth/search-console/callback', $_ENV['GOOGLE_SEARCH_CONSOLE_REDIRECT_URI']);
+        $this->assertSame(32, strlen((string)base64_decode($_ENV['SEARCH_CONSOLE_ENCRYPTION_KEY'], true)));
+        foreach (['APP_ENV', 'APP_DEBUG', 'APP_URL', 'APP_KEY', 'APP_TIMEZONE', 'APP_TRUSTED_HOSTS', 'LOG_LEVEL', 'LOG_PATH', 'DB_CONNECTION', 'DB_HOST', 'DB_PORT', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD', 'DB_CHARSET', 'SESSION_SECURE', 'SESSION_SAME_SITE', 'SESSION_LIFETIME', 'GOOGLE_SEARCH_CONSOLE_REDIRECT_URI', 'SEARCH_CONSOLE_ENCRYPTION_KEY', 'SEARCH_CONSOLE_ENCRYPTION_KEY_VERSION'] as $name) {
             unset($_ENV[$name]);
             putenv($name);
         }

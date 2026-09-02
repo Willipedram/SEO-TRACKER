@@ -138,6 +138,7 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://tracker.example
 APP_KEY=<at-least-32-random-characters>
+APP_TIMEZONE=Asia/Tehran
 APP_TRUSTED_HOSTS=tracker.example
 DB_CONNECTION=mysql
 DB_HOST=localhost
@@ -168,7 +169,7 @@ using the same protected-file pattern (without the `base64:` prefix); loss of th
 makes stored OAuth tokens unreadable. Register the exact callback:
 
 ```text
-https://tracker.example/websites/search-console/callback
+https://tracker.example/oauth/search-console/callback
 ```
 
 The Google password is never collected. Do not confuse an API key with OAuth client

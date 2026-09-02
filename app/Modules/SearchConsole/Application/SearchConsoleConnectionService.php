@@ -29,6 +29,12 @@ final class SearchConsoleConnectionService
         return $this->gateway->authorizationUrl($pending['state'], $pending['challenge']);
     }
 
+    public function websites(int $actorId): array
+    {
+        $this->authorization->require($actorId, 'search_console.connect');
+        return $this->database->fetchAll("SELECT public_id,site_name,normalized_domain FROM websites WHERE owner_user_id=:owner AND status<>'archived' ORDER BY site_name,id", ['owner'=>$actorId]);
+    }
+
     public function complete(int $actorId, string $state, ?string $code, ?string $providerError = null): array
     {
         $this->available($actorId);
