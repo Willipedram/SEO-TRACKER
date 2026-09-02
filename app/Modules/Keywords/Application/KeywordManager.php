@@ -51,11 +51,19 @@ final class KeywordManager
 
     public function create(int $actorId, string $websitePublicId, KeywordInput $input): string
     {
-        return $this->createMany($actorId, $websitePublicId, [$input])[0];
+        $result = $this->createBatch($actorId, $websitePublicId, [$input]);
+        if ($result['created'] === []) throw new InvalidArgumentException('This keyword tracking configuration already exists for the website.');
+        return $result['created'][0];
     }
 
     /** @param list<KeywordInput> $inputs @return list<string> */
     public function createMany(int $actorId, string $websitePublicId, array $inputs): array
+    {
+        return $this->createBatch($actorId, $websitePublicId, $inputs)['created'];
+    }
+
+    /** @param list<KeywordInput> $inputs @return array{created:list<string>,skipped:list<array{keyword:string,device:string}>} */
+    public function createBatch(int $actorId, string $websitePublicId, array $inputs): array
     {
         $this->authorization->require($actorId, 'keywords.create');
         $website = $this->activeWebsite($actorId, $websitePublicId);
@@ -63,15 +71,18 @@ final class KeywordManager
         foreach ($inputs as $input) if (!$input instanceof KeywordInput) throw new InvalidArgumentException('Keyword input is invalid.');
         $now = gmdate('Y-m-d H:i:s');
         return $this->database->transaction(function (Database $database) use ($actorId, $website, $inputs, $now): array {
-            $created = [];
+            $created = []; $skipped = [];
             foreach ($inputs as $input) {
-                if ($this->duplicate((int) $website['id'], $input)) throw new InvalidArgumentException('This keyword tracking configuration already exists for the website.');
+                if ($this->duplicate((int) $website['id'], $input)) {
+                    $skipped[] = ['keyword' => $input->text, 'device' => $input->device];
+                    continue;
+                }
                 $publicId = bin2hex(random_bytes(16));
                 $database->execute('INSERT INTO keywords (public_id, website_id, keyword_text, normalized_keyword, target_url, search_engine, country_code, language_code, device, active, created_at, updated_at) VALUES (:public, :website, :text, :normalized, :target, :engine, :country, :language, :device, :active, :created, :updated)', ['public' => $publicId, 'website' => $website['id'], 'text' => $input->text, 'normalized' => $input->normalizedText, 'target' => $input->targetUrl, 'engine' => $input->searchEngine, 'country' => $input->country, 'language' => $input->language, 'device' => $input->device, 'active' => $input->active ? 1 : 0, 'created' => $now, 'updated' => $now]);
                 $this->audit->record($actorId, 'keyword.created', 'keyword', $publicId, ['website' => $website['public_id'], 'engine' => $input->searchEngine, 'device' => $input->device]);
                 $created[] = $publicId;
             }
-            return $created;
+            return ['created' => $created, 'skipped' => $skipped];
         });
     }
 

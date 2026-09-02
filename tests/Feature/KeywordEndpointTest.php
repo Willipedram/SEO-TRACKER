@@ -64,6 +64,18 @@ final class KeywordEndpointTest extends TestCase
         $bulk = $controller->create(new Request('POST', '/keywords/create', body: ['website'=>$website,'keywords'=>"first bulk\nsecond bulk",'search_engine'=>'google','country'=>'US','language'=>'en','devices'=>['desktop','mobile'],'active'=>'1']));
         $this->assertSame(303, $bulk->status);
         $this->assertSame(5, (int)$database->fetchOne('SELECT COUNT(*) AS count FROM keywords')['count']);
+        $duplicate = $controller->create(new Request('POST', '/keywords/create', body: ['website'=>$website,'keywords'=>"first bulk\nthird bulk",'search_engine'=>'google','country'=>'US','language'=>'en','devices'=>['desktop'],'active'=>'1'], headers: ['x-requested-with'=>'XMLHttpRequest']));
+        $this->assertSame(200, $duplicate->status);
+        $this->assertTrue(str_contains($duplicate->body, '"redirect":"/keywords?website=' . $website . '"'));
+        $this->assertSame(6, (int)$database->fetchOne('SELECT COUNT(*) AS count FROM keywords')['count']);
+        $notice = $controller->index(new Request('GET', '/keywords', ['website'=>$website]));
+        $this->assertTrue(str_contains($notice->body, 'قبلاً وارد شده و نادیده گرفته شد'));
+        $this->assertTrue(str_contains($notice->body, 'first bulk'));
+        $repeated = $controller->create(new Request('POST', '/keywords/create', body: ['website'=>$website,'keywords'=>"repeated bulk\nrepeated bulk",'search_engine'=>'google','country'=>'US','language'=>'en','devices'=>['desktop'],'active'=>'1']));
+        $this->assertSame(303, $repeated->status);
+        $this->assertSame(7, (int)$database->fetchOne('SELECT COUNT(*) AS count FROM keywords')['count']);
+        $repeatedNotice = $controller->index(new Request('GET', '/keywords', ['website'=>$website]));
+        $this->assertTrue(str_contains($repeatedNotice->body, 'repeated bulk'));
         $edit = $controller->editForm(new Request('GET', '/keywords/edit', ['website' => $website, 'id' => $keyword]));
         $this->assertTrue(str_contains($edit->body, '/rank-dashboard?website=' . $website . '&keyword=' . $keyword));
         $this->assertTrue(!str_contains($edit->body, 'action="/rank-checks"'));

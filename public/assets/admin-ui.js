@@ -33,7 +33,13 @@
       const response = await fetch(url, {...options, headers: {...options.headers, 'X-Requested-With': 'XMLHttpRequest'}, credentials: 'same-origin'});
       const type = response.headers.get('content-type') || '';
       if (type.includes('text/html')) { swap(await response.text(), response.url || url, push); return true; }
-      const payload = await response.json().catch(() => ({})); toast(payload.error || 'عملیات انجام نشد.', true); return false;
+      const payload = await response.json().catch(() => ({}));
+      if (response.ok) {
+        if (payload.message) toast(payload.message);
+        if (payload.redirect) await request(new URL(payload.redirect, location.href).href);
+        return false;
+      }
+      toast(payload.error || 'عملیات انجام نشد.', true); return false;
     } catch { toast('ارتباط با سرور برقرار نشد؛ دوباره تلاش کنید.', true); return false; }
     finally { document.body.classList.remove('seo-loading'); }
   };

@@ -27,6 +27,9 @@ final class KeywordController
                 return $this->websiteSelection($manager->websites($actor));
             }
             $website = $this->websiteId($request->query['website'] ?? null);
+            $notice = is_string($_SESSION['keyword_notice'] ?? null) ? (string) $_SESSION['keyword_notice'] : '';
+            unset($_SESSION['keyword_notice']);
+            $noticeHtml = $notice === '' ? '' : '<div class="alert alert-info keyword-import-notice" role="status">' . Html::escape($notice) . '</div>';
             $rows = '';
             foreach ($manager->list($actor, $website) as $keyword) {
                 $id = Html::escape((string) $keyword['public_id']);
@@ -36,7 +39,7 @@ final class KeywordController
             }
             [, , $engines, $devices] = $this->factory->services();
             $modal = '<div class="keyword-modal" id="keyword-create-modal" hidden><div class="keyword-modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="keyword-create-title"><div class="keyword-modal-header"><h2 id="keyword-create-title">Add keywords</h2><button class="btn-close" type="button" data-keyword-modal-close aria-label="Close"></button></div>' . $this->bulkCreateForm($website, $engines, $devices) . '</div></div>';
-            return $this->page('Keywords', '<div class="d-flex flex-wrap gap-2 mb-3"><a class="btn btn-outline-primary" href="/websites/dashboard?id=' . $website . '">Website dashboard</a><button class="btn btn-primary" type="button" data-keyword-modal-open>Add keyword list</button></div><div class="table-scroll"><table><thead><tr><th>Keyword</th><th>Engine</th><th>Market</th><th>Device</th><th>Target URL</th><th>Status</th><th></th></tr></thead><tbody>' . $rows . '</tbody></table></div>' . $modal);
+            return $this->page('Keywords', $noticeHtml . '<div class="d-flex flex-wrap gap-2 mb-3"><a class="btn btn-outline-primary" href="/websites/dashboard?id=' . $website . '">Website dashboard</a><button class="btn btn-primary" type="button" data-keyword-modal-open>Add keyword list</button></div><div class="table-scroll"><table><thead><tr><th>Keyword</th><th>Engine</th><th>Market</th><th>Device</th><th>Target URL</th><th>Status</th><th></th></tr></thead><tbody>' . $rows . '</tbody></table></div>' . $modal);
         } catch (AuthorizationException $exception) { return $this->denied($exception); }
         catch (InvalidArgumentException $exception) { return $this->error('Keywords', $exception, 404); }
         catch (Throwable) { return $this->failure(); }
@@ -53,14 +56,21 @@ final class KeywordController
             [$manager, $auth, $engines, $devices, $countries] = $this->factory->services();
             $website = $this->websiteId($request->body['website'] ?? null);
             $terms = preg_split('/\R/u', (string) ($request->body['keywords'] ?? $request->body['keyword'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-            $terms = array_values(array_unique(array_filter(array_map('trim', $terms), static fn (string $term): bool => $term !== '')));
+            $terms = array_values(array_filter(array_map('trim', $terms), static fn (string $term): bool => $term !== ''));
             $selected = $request->body['devices'] ?? [$request->body['device'] ?? 'desktop'];
             if (!is_array($selected)) $selected = [$selected];
             $selected = array_values(array_intersect($devices, array_map('strval', $selected)));
             if ($terms === [] || $selected === []) throw new InvalidArgumentException('At least one keyword and one device are required.');
             $inputs = [];
             foreach ($terms as $term) foreach ($selected as $device) $inputs[] = KeywordInput::from(array_replace($request->body, ['keyword' => $term, 'device' => $device]), $engines, $devices, $countries);
-            $manager->createMany($this->actor($auth), $website, $inputs);
+            $result = $manager->createBatch($this->actor($auth), $website, $inputs);
+            $skippedWords = array_values(array_unique(array_column($result['skipped'], 'keyword')));
+            $message = count($result['created']) . ' ترکیب کلیدواژه و دستگاه افزوده شد.';
+            if ($skippedWords !== []) $message .= ' قبلاً وارد شده و نادیده گرفته شد: «' . implode('»، «', $skippedWords) . '».';
+            $_SESSION['keyword_notice'] = $message;
+            if (strtolower((string) $request->header('x-requested-with')) === 'xmlhttprequest') {
+                return Response::json(['redirect' => '/keywords?website=' . $website]);
+            }
             return Response::redirect('/keywords?website=' . $website);
         } catch (AuthorizationException $exception) { return $this->denied($exception); }
         catch (InvalidArgumentException $exception) { return $this->error('Add keyword', $exception); }
