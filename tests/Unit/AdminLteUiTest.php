@@ -122,7 +122,7 @@ final class AdminLteUiTest extends TestCase
     {
         $base=dirname(__DIR__,2);
         $ajax=(string)file_get_contents($base.'/public/assets/admin-ui.js');
-        foreach(['X-Requested-With','DOMParser','seo:content-updated','history.pushState','popstate','window.confirm','toast-container','search-console/connect','removeInjectedSkipLinks','MutationObserver','data-keyword-modal-open','data-keyword-modal-close','response.ok','payload.redirect'] as $required)$this->assertTrue(str_contains($ajax,$required));
+        foreach(['X-Requested-With','DOMParser','seo:content-updated','history.pushState','popstate','window.confirm','toast-container','search-console/connect','removeInjectedSkipLinks','MutationObserver','data-keyword-modal-open','data-keyword-modal-close','response.ok','payload.redirect','openKeywordEditor','keyword-edit-open','keyword-edit-panel','aria-busy'] as $required)$this->assertTrue(str_contains($ajax,$required));
         $this->assertTrue(str_contains((string)file_get_contents($base.'/public/assets/phase27.css'),'.skip-links{display:none!important}'));
         $dates=(string)file_get_contents($base.'/public/assets/persian-dates.js');
         foreach(['fa-IR-u-ca-persian','Asia/Tehran','Intl.DateTimeFormat','input[type="date"]','persian-date-hint','seo:content-updated'] as $required)$this->assertTrue(str_contains($dates,$required));

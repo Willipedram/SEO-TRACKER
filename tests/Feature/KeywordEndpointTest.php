@@ -61,6 +61,9 @@ final class KeywordEndpointTest extends TestCase
         $this->assertTrue(str_contains($response->body, 'name="devices[]" value="mobile" checked'));
         $this->assertTrue(str_contains($response->body, 'name="country" minlength="2" maxlength="2" value="IR"'));
         $this->assertTrue(str_contains($response->body, 'name="language" maxlength="35" value="fa"'));
+        $this->assertTrue(str_contains($response->body, 'id="keyword-edit-modal"'));
+        $this->assertTrue(str_contains($response->body, 'class="btn btn-sm btn-outline-primary keyword-edit-open"'));
+        $this->assertTrue(str_contains($response->body, 'data-edit-url="/keywords/edit?website=' . $website));
         $bulk = $controller->create(new Request('POST', '/keywords/create', body: ['website'=>$website,'keywords'=>"first bulk\nsecond bulk",'search_engine'=>'google','country'=>'US','language'=>'en','devices'=>['desktop','mobile'],'active'=>'1']));
         $this->assertSame(303, $bulk->status);
         $this->assertSame(5, (int)$database->fetchOne('SELECT COUNT(*) AS count FROM keywords')['count']);
@@ -78,6 +81,10 @@ final class KeywordEndpointTest extends TestCase
         $this->assertTrue(str_contains($repeatedNotice->body, 'repeated bulk'));
         $edit = $controller->editForm(new Request('GET', '/keywords/edit', ['website' => $website, 'id' => $keyword]));
         $this->assertTrue(str_contains($edit->body, '/rank-dashboard?website=' . $website . '&keyword=' . $keyword));
+        $this->assertTrue(str_contains($edit->body, 'class="keyword-edit-panel"'));
+        $this->assertTrue(str_contains($edit->body, 'form-control form-control-lg'));
+        $this->assertTrue(str_contains($edit->body, 'bi-check2-circle'));
+        $this->assertTrue(str_contains($edit->body, 'btn btn-outline-danger danger'));
         $this->assertTrue(!str_contains($edit->body, 'action="/rank-checks"'));
         $rankController = new RankTrackingController(new RankTrackingFactory($base, $config));
         $unavailableSubmission = $rankController->submit(new Request('POST', '/rank-checks', body: ['website' => $website, 'keyword' => $keyword]));

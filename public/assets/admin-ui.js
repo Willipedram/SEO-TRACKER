@@ -43,7 +43,20 @@
     } catch { toast('ارتباط با سرور برقرار نشد؛ دوباره تلاش کنید.', true); return false; }
     finally { document.body.classList.remove('seo-loading'); }
   };
-  document.addEventListener('click', event => {
+  const openKeywordEditor = async url => {
+    const modal = document.getElementById('keyword-edit-modal'); const content = modal?.querySelector('[data-keyword-edit-content]');
+    if (!modal || !content) { location.assign(url); return; }
+    modal.hidden = false; content.setAttribute('aria-busy', 'true');
+    content.innerHTML = '<div class="d-flex align-items-center justify-content-center gap-2 py-5"><span class="spinner-border text-primary" aria-hidden="true"></span><span>Loading...</span></div>';
+    try {
+      const response = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});
+      if (!response.ok) throw new Error('EDITOR_RESPONSE');
+      const next = new DOMParser().parseFromString(await response.text(), 'text/html'); const panel = next.querySelector('.keyword-edit-panel');
+      if (!panel) throw new Error('EDITOR_MARKUP');
+      content.replaceChildren(panel); content.removeAttribute('aria-busy'); panel.querySelector('input[name="keyword"]')?.focus();
+    } catch { content.removeAttribute('aria-busy'); content.innerHTML = '<div class="alert alert-danger" role="alert">ویرایش کلیدواژه بارگذاری نشد. دوباره تلاش کنید.</div>'; }
+  };
+  document.addEventListener('click', async event => {
     if (event.target.closest('[data-keyword-modal-open]')) {
       const modal = document.getElementById('keyword-create-modal');
       if (modal) { event.preventDefault(); modal.hidden = false; modal.querySelector('textarea')?.focus(); }
@@ -54,6 +67,8 @@
       if (modal) { event.preventDefault(); modal.hidden = true; }
       return;
     }
+    const edit = event.target.closest('.keyword-edit-open');
+    if (edit?.dataset.editUrl) { event.preventDefault(); await openKeywordEditor(edit.dataset.editUrl); return; }
     const link = event.target.closest('.app-main a[href]'); if (!link || event.ctrlKey || event.metaKey || event.shiftKey || link.target) return;
     const url = new URL(link.href, location.href); if (url.origin !== location.origin || !managed.test(url.pathname)) return;
     event.preventDefault(); request(url.href);
