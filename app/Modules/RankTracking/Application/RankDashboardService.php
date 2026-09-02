@@ -110,7 +110,7 @@ final class RankDashboardService
     private function website(int $actorId, string $publicId): array
     {
         if (!preg_match('/^[a-f0-9]{32}$/', $publicId)) throw new InvalidArgumentException('Website not found.');
-        $website = $this->database->fetchOne('SELECT id, public_id, site_name FROM websites WHERE public_id = :public AND owner_user_id = :owner', ['public' => $publicId, 'owner' => $actorId]);
+        $website = $this->database->fetchOne('SELECT id, public_id, site_name, normalized_domain FROM websites WHERE public_id = :public AND owner_user_id = :owner', ['public' => $publicId, 'owner' => $actorId]);
         if ($website === null) throw new InvalidArgumentException('Website not found.');
         return $website;
     }

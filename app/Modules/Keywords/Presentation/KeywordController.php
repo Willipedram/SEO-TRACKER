@@ -34,7 +34,9 @@ final class KeywordController
                 $status = (int) $keyword['active'] === 1 ? 'Active' : 'Inactive';
                 $rows .= '<tr><td>' . Html::escape((string) $keyword['keyword_text']) . '</td><td>' . Html::escape((string) $keyword['search_engine']) . '</td><td>' . Html::escape((string) $keyword['country_code']) . ' / ' . Html::escape((string) $keyword['language_code']) . '</td><td>' . Html::escape((string) $keyword['device']) . '</td><td>' . $target . '</td><td>' . $status . '</td><td><a href="/keywords/edit?website=' . $website . '&amp;id=' . $id . '">Edit</a></td></tr>';
             }
-            return $this->page('Keywords', '<p><a href="/websites/dashboard?id=' . $website . '">Website dashboard</a> · <a class="button" href="/keywords/create?website=' . $website . '">Add keyword</a></p><table><thead><tr><th>Keyword</th><th>Engine</th><th>Market</th><th>Device</th><th>Target URL</th><th>Status</th><th></th></tr></thead><tbody>' . $rows . '</tbody></table>');
+            [, , $engines, $devices] = $this->factory->services();
+            $modal = '<div class="keyword-modal" id="keyword-create-modal" hidden><div class="keyword-modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="keyword-create-title"><div class="keyword-modal-header"><h2 id="keyword-create-title">Add keywords</h2><button class="btn-close" type="button" data-keyword-modal-close aria-label="Close"></button></div>' . $this->bulkCreateForm($website, $engines, $devices) . '</div></div>';
+            return $this->page('Keywords', '<div class="d-flex flex-wrap gap-2 mb-3"><a class="btn btn-outline-primary" href="/websites/dashboard?id=' . $website . '">Website dashboard</a><button class="btn btn-primary" type="button" data-keyword-modal-open>Add keyword list</button></div><div class="table-scroll"><table><thead><tr><th>Keyword</th><th>Engine</th><th>Market</th><th>Device</th><th>Target URL</th><th>Status</th><th></th></tr></thead><tbody>' . $rows . '</tbody></table></div>' . $modal);
         } catch (AuthorizationException $exception) { return $this->denied($exception); }
         catch (InvalidArgumentException $exception) { return $this->error('Keywords', $exception, 404); }
         catch (Throwable) { return $this->failure(); }
@@ -50,7 +52,15 @@ final class KeywordController
         try {
             [$manager, $auth, $engines, $devices, $countries] = $this->factory->services();
             $website = $this->websiteId($request->body['website'] ?? null);
-            $manager->create($this->actor($auth), $website, KeywordInput::from($request->body, $engines, $devices, $countries));
+            $terms = preg_split('/\R/u', (string) ($request->body['keywords'] ?? $request->body['keyword'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            $terms = array_values(array_unique(array_filter(array_map('trim', $terms), static fn (string $term): bool => $term !== '')));
+            $selected = $request->body['devices'] ?? [$request->body['device'] ?? 'desktop'];
+            if (!is_array($selected)) $selected = [$selected];
+            $selected = array_values(array_intersect($devices, array_map('strval', $selected)));
+            if ($terms === [] || $selected === []) throw new InvalidArgumentException('At least one keyword and one device are required.');
+            $inputs = [];
+            foreach ($terms as $term) foreach ($selected as $device) $inputs[] = KeywordInput::from(array_replace($request->body, ['keyword' => $term, 'device' => $device]), $engines, $devices, $countries);
+            $manager->createMany($this->actor($auth), $website, $inputs);
             return Response::redirect('/keywords?website=' . $website);
         } catch (AuthorizationException $exception) { return $this->denied($exception); }
         catch (InvalidArgumentException $exception) { return $this->error('Add keyword', $exception); }
@@ -110,7 +120,8 @@ final class KeywordController
             $permission = $editing ? 'keywords.edit' : 'keywords.create';
             $keyword = $editing ? $manager->find($actor, $website, $this->keywordId($request->query['id'] ?? null), $permission) : null;
             if (!$editing) $manager->authorize($actor, $website, $permission);
-            $form = '<form method="post" action="/keywords/' . ($editing ? 'edit' : 'create') . '">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '">';
+            if (!$editing) return $this->page('Add keyword', $this->bulkCreateForm($website, $engines, $devices));
+            $form = '<form method="post" action="/keywords/edit">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '">';
             if ($editing) $form .= '<input type="hidden" name="id" value="' . Html::escape((string) $keyword['public_id']) . '">';
             $form .= '<label>Keyword<input required name="keyword" maxlength="255" value="' . Html::escape((string) ($keyword['keyword_text'] ?? '')) . '"></label><label>Target URL (optional)<input type="url" name="target_url" maxlength="2048" value="' . Html::escape((string) ($keyword['target_url'] ?? '')) . '"></label>';
             $form .= '<label>Search engine<select name="search_engine">' . $this->options($engines, (string) ($keyword['search_engine'] ?? 'google')) . '</select></label><label>Country code<input required name="country" minlength="2" maxlength="2" value="' . Html::escape((string) ($keyword['country_code'] ?? 'US')) . '"></label><label>Language<input required name="language" maxlength="35" value="' . Html::escape((string) ($keyword['language_code'] ?? 'en')) . '"></label><label>Device<select name="device">' . $this->options($devices, (string) ($keyword['device'] ?? 'desktop')) . '</select></label><label><input type="checkbox" name="active" value="1"' . (!$editing || (int) $keyword['active'] === 1 ? ' checked' : '') . '> Active</label><button>Save keyword</button></form>';
@@ -118,9 +129,9 @@ final class KeywordController
                 $active = (int) $keyword['active'] === 1;
                 $form .= '<form method="post" action="/keywords/status">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="id" value="' . Html::escape((string) $keyword['public_id']) . '"><input type="hidden" name="active" value="' . ($active ? '0' : '1') . '"><button>' . ($active ? 'Deactivate' : 'Activate') . '</button></form>';
                 $form .= '<form method="post" action="/keywords/delete">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="id" value="' . Html::escape((string) $keyword['public_id']) . '"><button class="danger">Delete keyword</button></form>';
-                $form .= '<form method="post" action="/rank-checks">' . $this->csrf() . '<input type="hidden" name="website" value="' . $website . '"><input type="hidden" name="keyword" value="' . Html::escape((string) $keyword['public_id']) . '"><button>Run rank check</button></form><p><a href="/rank-checks/history?website=' . $website . '&keyword=' . Html::escape((string) $keyword['public_id']) . '">View rank history</a></p>';
+                $form .= '<p class="rank-keyword-links"><a class="button" href="/rank-dashboard?website=' . $website . '&keyword=' . Html::escape((string) $keyword['public_id']) . '">Open rank dashboard</a><a href="/rank-checks/history?website=' . $website . '&keyword=' . Html::escape((string) $keyword['public_id']) . '">View rank history</a></p>';
             }
-            return $this->page($editing ? 'Edit keyword' : 'Add keyword', $form);
+            return $this->page('Edit keyword', $form);
         } catch (AuthorizationException $exception) { return $this->denied($exception); }
         catch (InvalidArgumentException $exception) { return $this->error('Keyword', $exception, 404); }
         catch (Throwable) { return $this->failure(); }
@@ -131,6 +142,13 @@ final class KeywordController
         $html = '';
         foreach ($values as $value) if (is_string($value)) $html .= '<option value="' . Html::escape($value) . '"' . ($value === $selected ? ' selected' : '') . '>' . Html::escape(ucfirst($value)) . '</option>';
         return $html;
+    }
+
+    private function bulkCreateForm(string $website, array $engines, array $devices): string
+    {
+        $deviceChecks = '';
+        foreach ($devices as $device) if (is_string($device)) $deviceChecks .= '<label class="form-check"><input class="form-check-input" type="checkbox" name="devices[]" value="' . Html::escape($device) . '" checked><span class="form-check-label">' . Html::escape(ucfirst($device)) . '</span></label>';
+        return '<form class="adminlte-form keyword-bulk-form" method="post" action="/keywords/create">' . $this->csrf() . '<input type="hidden" name="website" value="' . Html::escape($website) . '"><div class="alert alert-info">Each line is saved as a separate keyword for every selected device.</div><label>Keyword list<textarea class="form-control" required name="keywords" rows="7" maxlength="20000" placeholder="One keyword per line"></textarea></label><label>Target URL (optional)<input class="form-control" type="url" name="target_url" maxlength="2048"></label><div class="row g-3"><label class="col-md-4">Search engine<select class="form-select" name="search_engine">' . $this->options($engines, 'google') . '</select></label><label class="col-md-4">Country code<input class="form-control" required name="country" minlength="2" maxlength="2" value="IR"></label><label class="col-md-4">Language<input class="form-control" required name="language" maxlength="35" value="fa"></label></div><fieldset class="keyword-device-fieldset"><legend>Devices</legend><div class="d-flex flex-wrap gap-3">' . $deviceChecks . '</div></fieldset><label class="form-check"><input class="form-check-input" type="checkbox" name="active" value="1" checked><span class="form-check-label">Active</span></label><div class="keyword-modal-actions"><button class="btn btn-outline-secondary" type="button" data-keyword-modal-close>Cancel</button><button class="btn btn-primary" type="submit">Save keywords</button></div></form>';
     }
 
     private function websiteSelection(array $websites): Response

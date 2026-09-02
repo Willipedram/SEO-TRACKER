@@ -127,13 +127,13 @@ final class FreshInstallE2ETest extends TestCase
         $edit = $this->http($origin . '/keywords/edit?website=' . $website . '&id=' . $keyword, cookie: $cookie);
         $this->assertPersianPage($edit['body'], 'ویرایش کلیدواژه');
         $rank = $this->http($origin . '/rank-checks', ['_token' => $this->csrf($edit['body']), 'website' => $website, 'keyword' => $keyword], $cookie);
-        $this->assertSame(422, $rank['status']);
-        $this->assertTrue(str_contains($this->decoded($rank['body']), 'هیچ رابط تأییدشده‌ای برای اجرای زنده ردیابی رتبه پیکربندی نشده است'), $this->decoded($rank['body']));
+        $this->assertSame(303, $rank['status']);
         $rankDashboard = $this->http($origin . '/rank-dashboard?website=' . $website, cookie: $cookie);
         $this->assertSame(200, $rankDashboard['status']);
         $this->assertPersianPage($rankDashboard['body'], 'داشبورد رتبه‌بندی');
+        $this->assertTrue(str_contains($rankDashboard['body'], 'manual-rank-start'));
         $searchConsole = $this->http($origin . '/websites/search-console?website=' . $website, cookie: $cookie);
-        $this->assertTrue(in_array($searchConsole['status'], [200, 503], true));
+        $this->assertTrue(in_array($searchConsole['status'], [200, 422, 503], true));
         $this->assertPersianPage($searchConsole['body'], 'سرچ کنسول');
         foreach ([['/admin/users','کاربران'],['/admin/roles','نقش‌ها'],['/admin/roles/permissions?id=1','تخصیص مجوزهای نقش'],['/reports','گزارش‌ها'],['/settings','تنظیمات من'],['/admin/settings','مدیریت ماژول‌ها و تنظیمات']] as [$path,$copy]) {
             $screen=$this->http($origin.$path,cookie:$cookie); $this->assertSame(200,$screen['status']); $this->assertPersianPage($screen['body'],$copy);

@@ -21,11 +21,13 @@ final class EnvironmentWriter
         $values = [
             'APP_ENV' => 'production', 'APP_DEBUG' => 'false', 'APP_URL' => $applicationUrl,
             'APP_KEY' => 'base64:' . base64_encode(random_bytes(32)),
-            'APP_TIMEZONE' => 'UTC', 'APP_LOCALE' => 'fa', 'APP_TRUSTED_HOSTS' => (string) parse_url($applicationUrl, PHP_URL_HOST),
+            'APP_TIMEZONE' => 'Asia/Tehran', 'APP_LOCALE' => 'fa', 'APP_TRUSTED_HOSTS' => (string) parse_url($applicationUrl, PHP_URL_HOST),
             'LOG_LEVEL' => 'info', 'LOG_PATH' => 'storage/logs/application.log',
             'DB_CONNECTION' => 'mysql', 'DB_HOST' => $database->host, 'DB_PORT' => (string) $database->port,
             'DB_DATABASE' => $database->database, 'DB_USERNAME' => $database->username, 'DB_PASSWORD' => $database->password,
             'DB_CHARSET' => 'utf8mb4', 'SESSION_SECURE' => str_starts_with($applicationUrl, 'https://') ? 'true' : 'false', 'SESSION_SAME_SITE' => 'Lax', 'SESSION_LIFETIME' => '43200',
+            'GOOGLE_SEARCH_CONSOLE_REDIRECT_URI' => rtrim($applicationUrl, '/') . '/oauth/search-console/callback',
+            'SEARCH_CONSOLE_ENCRYPTION_KEY' => base64_encode(random_bytes(32)), 'SEARCH_CONSOLE_ENCRYPTION_KEY_VERSION' => 'v1',
         ];
         $existing = $preserveExisting && is_file($this->path) ? file_get_contents($this->path) : null;
         if ($preserveExisting && !is_string($existing)) throw new InstallerException('Existing configuration could not be read safely.');

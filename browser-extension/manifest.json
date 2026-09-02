@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "SEO Tracker User-IP Rank Runner",
+  "version": "1.6.0",
+  "description": "Runs an explicit Google rank check from the user's browser network.",
+  "permissions": ["tabs", "windows", "scripting", "storage", "debugger"],
+  "host_permissions": ["https://www.google.com/*"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "action": {"default_title": "SEO Tracker Rank Runner", "default_popup": "popup.html"},
+  "background": {"service_worker": "worker.js"},
+  "incognito": "spanning"
+}
